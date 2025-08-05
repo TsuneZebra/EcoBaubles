@@ -1,0 +1,16 @@
+[
+{
+  "modid": "ecobaubles",
+  "name": "生态饰品",
+  "description": "添加了一系列的生态环境饰品",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Tsune"],
+  "credits": "The Forge and FML guys, for making this example",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": ["baubles"]
+}
+]
