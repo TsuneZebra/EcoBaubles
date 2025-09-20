@@ -52,7 +52,15 @@ public class EntityWindArrow extends EntityArrow {
     
     @Override
     public void onUpdate() {
+        // 移除重力影响，使风箭没有下坠
+        if (!this.inGround) {
+            // 保持发射时的垂直速度，但移除重力影响
+            // 不直接设置motionY为0，而是抵消重力
+            this.motionY += 0.05D; // 抵消重力加速度
+        }
+        
         super.onUpdate();
+        
         if (this.ticksExisted > 100) { // Arrow lives for 5 seconds
             this.setDead();
         }

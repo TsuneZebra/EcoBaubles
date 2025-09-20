@@ -2,9 +2,10 @@ package com.tsune.ecobaubles.items;
 
 import baubles.api.BaubleType;
 import baubles.api.IBauble;
+import com.tsune.ecobaubles.init.ModCreativeTab;
 import com.tsune.ecobaubles.init.ModItems;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -21,7 +22,7 @@ public class ItemAmuletSkyfeather extends Item implements IBauble {
     public ItemAmuletSkyfeather(String name) {
         setUnlocalizedName(name);
         setRegistryName(name);
-        setCreativeTab(CreativeTabs.MISC);
+        setCreativeTab(ModCreativeTab.INSTANCE);
         setMaxStackSize(1);
 
         ModItems.ITEMS.add(this);
@@ -46,20 +47,20 @@ public class ItemAmuletSkyfeather extends Item implements IBauble {
     @Override
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
         super.addInformation(stack, worldIn, tooltip, flagIn);
-        tooltip.add("§b含有风神的意识的残留，在危急时刻会发挥出极大的作用");
+        tooltip.add(I18n.format("item.skyfeather_amulet.desc"));
 
         NBTTagCompound nbt = stack.getTagCompound();
         
         if (worldIn != null && nbt != null && nbt.hasKey("skyfeather_cooldown")) {
             long cooldown = nbt.getLong("skyfeather_cooldown");
-            long remaining = (cooldown + 12000) - worldIn.getTotalWorldTime();
+            long remaining = (cooldown + 200) - worldIn.getTotalWorldTime();
             if (remaining > 0) {
-                tooltip.add("§c神的意识正在重新汇聚");
+                tooltip.add(I18n.format("item.skyfeather_amulet.cooldown"));
             } else {
-                 tooltip.add("§a准备就绪");
+                 tooltip.add(I18n.format("item.skyfeather_amulet.ready"));
             }
         } else {
-            tooltip.add("§a准备就绪");
+            tooltip.add(I18n.format("item.skyfeather_amulet.ready"));
         }
     }
 }

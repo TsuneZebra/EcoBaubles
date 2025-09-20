@@ -1,3 +1,10 @@
 item.skyfeather_amulet.name=Skyfeather Amulet
+item.skyfeather_amulet.desc=§bContains remnants of the Wind God's consciousness, providing great power in times of crisis
+item.skyfeather_amulet.ready=§aReady
+item.skyfeather_amulet.cooldown=§cThe divine consciousness is reforming
 item.wind_ring.name=Ring of Zephyr
+item.wind_ring.desc=§7Press [G] to fire a wind arrow that pierces through everything.
+item.wind_ring.cooldown=§7(Shared cooldown 60s)
 item.wind_amulet.name=Wind Amulet
+
+itemGroup.ecobaubles=EcoBaubles

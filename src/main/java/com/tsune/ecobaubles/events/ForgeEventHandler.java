@@ -4,18 +4,24 @@ import baubles.api.BaublesApi;
 import baubles.api.cap.IBaublesItemHandler;
 import com.tsune.ecobaubles.init.ModItems;
 import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.ai.attributes.IAttributeInstance;
+import net.minecraft.entity.ai.attributes.AttributeModifier;
+import net.minecraft.entity.SharedMonsterAttributes;
+import java.util.UUID;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.MobEffects;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.DamageSource;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
+import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.List;
@@ -23,7 +29,7 @@ import java.util.List;
 public class ForgeEventHandler {
 
     private static final String COOLDOWN_TAG = "skyfeather_cooldown";
-    private static final int COOLDOWN_TICKS = 12000; // 10 minutes * 60 seconds * 20 ticks/second
+    private static final int COOLDOWN_TICKS = 9600; // 8 minutes * 60 seconds * 20 ticks/second
 
     @SubscribeEvent
     public void onLivingHurt(LivingHurtEvent event) {
@@ -45,7 +51,7 @@ public class ForgeEventHandler {
         for (int i = 0; i < baublesHandler.getSlots(); i++) {
             ItemStack stack = baublesHandler.getStackInSlot(i);
             if (!stack.isEmpty()) {
-                if (stack.getItem() == ModItems.WIND_AMULET && event.getAmount() > 8.0F) {
+                if (stack.getItem() == ModItems.WIND_AMULET && event.getAmount() > 6.0F) {
                     handleWindAmulet(player, world);
                     return; // Wind Amulet triggered, stop processing for this event
                 } else if (stack.getItem() == ModItems.SKYFEATHER_AMULET) {
@@ -97,14 +103,24 @@ public class ForgeEventHandler {
         player.addPotionEffect(new PotionEffect(MobEffects.JUMP_BOOST, 160, 4)); // Jump Boost V (level 4) for 8s
         player.addPotionEffect(new PotionEffect(MobEffects.RESISTANCE, 160, 0)); // Resistance I (level 0) for 8s
 
-        // Launch logic
-        if (world.getBlockState(player.getPosition().up(2)).isFullCube()) {
+        // Launch logic - check for blocks in 8 blocks above
+        boolean hasBlockAbove = false;
+        for (int i = 1; i <= 8; i++) {
+            if (world.getBlockState(player.getPosition().up(i)).isFullCube()) {
+                hasBlockAbove = true;
+                break;
+            }
+        }
+        
+        if (hasBlockAbove) {
             // Strong knockback if blocked
             double range = 6.0D;
             List<EntityLivingBase> entities = world.getEntitiesWithinAABB(EntityLivingBase.class, player.getEntityBoundingBox().grow(range));
              for (EntityLivingBase entity : entities) {
                 if (entity != player) {
                     entity.knockBack(player, 2.5F, player.posX - entity.posX, player.posZ - entity.posZ);
+                    // Add 20 damage to knocked back entities
+                    entity.attackEntityFrom(DamageSource.causePlayerDamage(player), 20.0F);
                 }
             }
         } else {
@@ -137,11 +153,71 @@ public class ForgeEventHandler {
     public void onPlayerFall(LivingFallEvent event) {
         if (event.getEntityLiving() instanceof EntityPlayer) {
             EntityPlayer player = (EntityPlayer) event.getEntityLiving();
-            // Check if player has the specific Absorption V from our amulet
+            
+            // Check if player has Skyfeather Amulet for permanent fall damage reduction
+            IBaublesItemHandler baublesHandler = BaublesApi.getBaublesHandler(player);
+            boolean hasSkyfeather = false;
+            for (int i = 0; i < baublesHandler.getSlots(); i++) {
+                if (baublesHandler.getStackInSlot(i).getItem() == ModItems.SKYFEATHER_AMULET) {
+                    hasSkyfeather = true;
+                    break;
+                }
+            }
+            
+            if (hasSkyfeather) {
+                // Reduce fall damage by 60%
+                event.setDamageMultiplier(0.4F);
+            }
+            
+            // Check if player has the specific Absorption V from our amulet (death protection effect)
             PotionEffect absorption = player.getActivePotionEffect(MobEffects.ABSORPTION);
             if (absorption != null && absorption.getAmplifier() == 4) {
-                // Cancel fall damage
+                // Cancel fall damage completely during death protection
                 event.setCanceled(true);
+            }
+        }
+    }
+    
+    @SubscribeEvent
+    public void onLivingUpdate(LivingUpdateEvent event) {
+        if (event.getEntityLiving() instanceof EntityPlayer) {
+            EntityPlayer player = (EntityPlayer) event.getEntityLiving();
+            
+            if (player.world.isRemote) {
+                return;
+            }
+            
+            // Check if player has Skyfeather Amulet for permanent speed boost
+            IBaublesItemHandler baublesHandler = BaublesApi.getBaublesHandler(player);
+            boolean hasSkyfeather = false;
+            for (int i = 0; i < baublesHandler.getSlots(); i++) {
+                if (baublesHandler.getStackInSlot(i).getItem() == ModItems.SKYFEATHER_AMULET) {
+                    hasSkyfeather = true;
+                    break;
+                }
+            }
+            
+            if (hasSkyfeather) {
+                // Apply permanent speed boost (20% movement speed increase)
+                IAttributeInstance movementSpeed = player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
+                UUID speedModifierUUID = UUID.fromString("12345678-1234-1234-1234-123456789abc");
+                if (movementSpeed.getModifier(speedModifierUUID) == null) {
+                    // Add 20% speed boost using MULTIPLY_TOTAL operation
+                    movementSpeed.applyModifier(new AttributeModifier(
+                        speedModifierUUID,
+                        "skyfeather_speed_boost",
+                        0.2D,
+                        2
+                    ));
+                }
+            } else {
+                // Remove speed boost when amulet is not equipped
+                IAttributeInstance movementSpeed = player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
+                UUID speedModifierUUID = UUID.fromString("12345678-1234-1234-1234-123456789abc");
+                AttributeModifier speedModifier = movementSpeed.getModifier(speedModifierUUID);
+                if (speedModifier != null) {
+                    movementSpeed.removeModifier(speedModifier);
+                }
             }
         }
     }

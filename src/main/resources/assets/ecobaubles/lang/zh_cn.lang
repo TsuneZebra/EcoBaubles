@@ -1,3 +1,10 @@
 item.wind_amulet.name=风之护符
 item.skyfeather_amulet.name=凌天坠羽
+item.skyfeather_amulet.desc=§b含有风神的意识的残留，在危急时刻会发挥出极大的作用
+item.skyfeather_amulet.ready=§a准备就绪
+item.skyfeather_amulet.cooldown=§c神的意识正在重新汇聚
 item.wind_ring.name=苍风戒
+item.wind_ring.desc=§7按[G]发射一根穿透一切的风箭。
+item.wind_ring.cooldown=§7(共享冷却 60s)
+
+itemGroup.ecobaubles=生态护符

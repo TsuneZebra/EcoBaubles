@@ -3,10 +3,11 @@ package com.tsune.ecobaubles.items;
 import baubles.api.BaubleType;
 import baubles.api.IBauble;
 import com.tsune.ecobaubles.entity.EntityWindArrow;
+import com.tsune.ecobaubles.init.ModCreativeTab;
 import com.tsune.ecobaubles.init.ModItems;
 import com.tsune.ecobaubles.item.special.IActiveAbility;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
-import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.EnumRarity;
 import net.minecraft.item.Item;
@@ -25,7 +26,7 @@ public class ItemRingWind extends Item implements IBauble, IActiveAbility {
     public ItemRingWind(String name) {
         setUnlocalizedName(name);
         setRegistryName(name);
-        setCreativeTab(CreativeTabs.MISC);
+        setCreativeTab(ModCreativeTab.INSTANCE);
         setMaxStackSize(1);
 
         ModItems.ITEMS.add(this);
@@ -45,8 +46,8 @@ public class ItemRingWind extends Item implements IBauble, IActiveAbility {
     @Override
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
         super.addInformation(stack, worldIn, tooltip, flagIn);
-        tooltip.add("§7按[G]发射一根穿透一切的风箭。");
-        tooltip.add("§7(共享冷却 60s)");
+        tooltip.add(I18n.format("item.wind_ring.desc"));
+        tooltip.add(I18n.format("item.wind_ring.cooldown"));
     }
 
     @Override

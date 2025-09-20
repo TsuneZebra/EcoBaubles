@@ -2,6 +2,7 @@ package com.tsune.ecobaubles.client.renderer;
 
 import com.tsune.ecobaubles.EcoBaubles;
 import com.tsune.ecobaubles.entity.EntityWindArrow;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderArrow;
 import net.minecraft.client.renderer.entity.RenderManager;
@@ -12,7 +13,7 @@ import javax.annotation.Nullable;
 
 public class RenderWindArrow extends RenderArrow<EntityWindArrow> {
 
-    public static final ResourceLocation TEXTURE = new ResourceLocation(EcoBaubles.MODID, "textures/entity/wind_arrow.png");
+    public static final ResourceLocation TEXTURE = new ResourceLocation(EcoBaubles.MODID, "entity/wind_arrow.png");
 
     public RenderWindArrow(RenderManager renderManagerIn) {
         super(renderManagerIn);
@@ -22,6 +23,12 @@ public class RenderWindArrow extends RenderArrow<EntityWindArrow> {
     @Override
     protected ResourceLocation getEntityTexture(EntityWindArrow entity) {
         return TEXTURE;
+    }
+    
+    @Override
+    public void doRender(EntityWindArrow entity, double x, double y, double z, float entityYaw, float partialTicks) {
+        this.bindEntityTexture(entity);
+        super.doRender(entity, x, y, z, entityYaw, partialTicks);
     }
     
     public static class Factory implements IRenderFactory<EntityWindArrow> {
