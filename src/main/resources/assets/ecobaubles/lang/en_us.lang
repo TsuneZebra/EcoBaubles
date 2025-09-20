@@ -6,5 +6,16 @@ item.wind_ring.name=Ring of Zephyr
 item.wind_ring.desc=§7Press [G] to fire a wind arrow that pierces through everything.
 item.wind_ring.cooldown=§7(Shared cooldown 60s)
 item.wind_amulet.name=Wind Amulet
+item.wind_attraction_ring.name=Wind Attraction Ring
+item.wind_attraction_ring.desc=§7When killing enemy creatures, attracts nearby enemies to the death location
+item.crack_wind_ring.name=Crack Wind Ring
+item.crack_wind_ring.desc=§7+20%% bow speed; +20%% arrow speed, deals 20%% chain damage to enemies behind target
+item.wind_shadow_belt.name=Wind Shadow Belt
+item.wind_shadow_belt.desc=§7After sprinting for 10 seconds, gain Wind State: +30%% speed, +1 jump, 15%% dodge chance; gain 1 Wind Mark every 7 seconds (max 5), +3%% speed per mark, converts to wind shield when taking damage
+item.wind_crown.name=Wind Crown
+item.wind_crown.desc=§bThe crown of the Wind, containing powerful wind energy
+item.wind_crown.shield_info=§7Gain wind shield when health drops below 50%%
+item.wind_crown.projectile_info=§7Wind shield absorbs 40%% melee damage and 70%% projectile damage
+item.wind_crown.regen_info=§7Shield cannot regenerate for 40 seconds after breaking
 
 itemGroup.ecobaubles=EcoBaubles

@@ -1,10 +1,21 @@
 item.wind_amulet.name=风之护符
 item.skyfeather_amulet.name=凌天坠羽
-item.skyfeather_amulet.desc=§b含有风神的意识的残留，在危急时刻会发挥出极大的作用
+item.skyfeather_amulet.desc=§b含有风的意识的残留，在危急时刻会发挥出极大的作用
 item.skyfeather_amulet.ready=§a准备就绪
 item.skyfeather_amulet.cooldown=§c神的意识正在重新汇聚
 item.wind_ring.name=苍风戒
 item.wind_ring.desc=§7按[G]发射一根穿透一切的风箭。
 item.wind_ring.cooldown=§7(共享冷却 60s)
+item.wind_attraction_ring.name=风引指环
+item.wind_attraction_ring.desc=§7击杀敌方生物时，在死亡位置吸引小范围内的敌方生物
+item.crack_wind_ring.name=裂风戒
+item.crack_wind_ring.desc=§7+20%%拉弓速度；箭矢飞行速度+20%%，命中后对后方小范围内生物造成20%%连锁伤害
+item.wind_shadow_belt.name=风影束带
+item.wind_shadow_belt.desc=§7连续奔跑10秒后获得风行状态：移速+30%%、跳跃+1、15%%闪避几率；每7秒获得1层风灵印记（最多5层），每层+3%%移速，受到攻击时消耗全部印记转化为风护盾
+item.wind_crown.name=风冠
+item.wind_crown.desc=§b风之王冠，蕴含着强大的风之力量
+item.wind_crown.shield_info=§7当生命值低于50%%时，获得风护盾
+item.wind_crown.projectile_info=§7风护盾可吸收40%%近战伤害和70%%弹射物伤害
+item.wind_crown.regen_info=§7护盾破碎后40秒内无法重新生成
 
 itemGroup.ecobaubles=生态护符
