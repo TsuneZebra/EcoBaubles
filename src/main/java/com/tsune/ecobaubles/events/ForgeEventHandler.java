@@ -72,6 +72,13 @@ public class ForgeEventHandler {
     private static final double KNOCKBACK_RANGE = 5.0D; // 5 block radius for knockback
     private static final float KNOCKBACK_FORCE = 1.5F; // Knockback force when shield breaks
     
+    // Wind Shield Echo - Damage immunity and reflection system
+    private static final Map<UUID, WindShieldEchoData> windShieldEchoPlayers = new HashMap<>();
+    private static final double SHIELD_PROBABILITY = 0.15; // 15% chance to trigger shield
+    private static final int SHIELD_DURATION = 100; // 5 seconds * 20 ticks/second
+    private static final double AREA_DAMAGE_RANGE = 2.0D; // 2 block radius for area damage
+    private static final float AREA_DAMAGE_AMOUNT = 10.0F; // 10 damage to nearby enemies
+    
     // Data class to track attraction effects
     private static class AttractionData {
         public final double centerX, centerY, centerZ;
@@ -104,6 +111,14 @@ public class ForgeEventHandler {
         public int lastDamageTime = 0; // Last time player took damage
         public boolean shieldActive = false; // Whether wind shield is currently active
     }
+    
+    // Data class to track Wind Shield Echo effects
+    private static class WindShieldEchoData {
+        public boolean hasShield = false; // Whether player currently has wind shield
+        public int shieldEndTime = 0; // When the shield expires (in ticks)
+        public float reflectedDamage = 0.0F; // Damage to reflect to attacker
+        public Entity attacker = null; // The entity that triggered the shield
+    }
 
     @SubscribeEvent
     public void onLivingHurt(LivingHurtEvent event) {
@@ -123,6 +138,7 @@ public class ForgeEventHandler {
         int amuletSlot = -1;
         boolean hasWindShadowBelt = false;
         boolean hasWindCrown = false;
+        boolean hasWindShieldEcho = false;
 
         for (int i = 0; i < baublesHandler.getSlots(); i++) {
             ItemStack stack = baublesHandler.getStackInSlot(i);
@@ -138,7 +154,16 @@ public class ForgeEventHandler {
                     hasWindShadowBelt = true;
                 } else if (stack.getItem() == ModItems.WIND_CROWN) {
                     hasWindCrown = true;
+                } else if (stack.getItem() == ModItems.WIND_SHIELD_ECHO) {
+                    hasWindShieldEcho = true;
                 }
+            }
+        }
+        
+        // Handle Wind Shield Echo effects (check first as it can cancel damage)
+        if (hasWindShieldEcho) {
+            if (handleWindShieldEchoDamage(event, player, world)) {
+                return; // Shield activated, stop processing
             }
         }
         
@@ -334,6 +359,9 @@ public class ForgeEventHandler {
         
         // Process Wind Crown shield regeneration
         processWindCrownShieldRegeneration(event.world);
+        
+        // Process Wind Shield Echo shield expiration
+        processWindShieldEchoExpiration(event.world);
     }
 
     @SubscribeEvent
@@ -865,6 +893,151 @@ public class ForgeEventHandler {
         for (int i = 0; i < baublesHandler.getSlots(); i++) {
             ItemStack stack = baublesHandler.getStackInSlot(i);
             if (!stack.isEmpty() && stack.getItem() == ModItems.WIND_CROWN) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * Handle Wind Shield Echo damage immunity and reflection
+     * @param event The damage event
+     * @param player The player taking damage
+     * @param world The world
+     * @return true if shield was activated and damage should be canceled
+     */
+    private boolean handleWindShieldEchoDamage(LivingHurtEvent event, EntityPlayer player, World world) {
+        UUID playerUUID = player.getUniqueID();
+        WindShieldEchoData data = windShieldEchoPlayers.get(playerUUID);
+        
+        if (data == null) {
+            data = new WindShieldEchoData();
+            windShieldEchoPlayers.put(playerUUID, data);
+        }
+        
+        // Check if player already has an active shield
+        if (data.hasShield && world.getTotalWorldTime() < data.shieldEndTime) {
+            // Shield is active, cancel damage and reflect it
+            float damageAmount = event.getAmount();
+            data.reflectedDamage = damageAmount;
+            data.attacker = event.getSource().getTrueSource();
+            
+            // Cancel the damage
+            event.setCanceled(true);
+            
+            // Play shield sound
+            world.playSound(null, player.posX, player.posY, player.posZ, 
+                SoundEvents.ENTITY_ENDERDRAGON_FLAP, SoundCategory.PLAYERS, 0.8F, 1.2F);
+            
+            // Apply reflection and area damage
+            applyWindShieldEchoReflection(player, world, data);
+            
+            // Remove the shield after use
+            data.hasShield = false;
+            data.shieldEndTime = 0;
+            
+            return true;
+        }
+        
+        // Check if we should trigger a new shield (15% chance)
+        if (!data.hasShield && world.rand.nextDouble() < SHIELD_PROBABILITY) {
+            // Activate wind shield
+            data.hasShield = true;
+            data.shieldEndTime = (int)world.getTotalWorldTime() + SHIELD_DURATION;
+            
+            // Play shield activation sound
+            world.playSound(null, player.posX, player.posY, player.posZ, 
+                SoundEvents.ENTITY_ENDERDRAGON_FLAP, SoundCategory.PLAYERS, 1.0F, 1.5F);
+            
+            // Cancel the current damage
+            event.setCanceled(true);
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Apply wind shield echo reflection and area damage
+     */
+    private void applyWindShieldEchoReflection(EntityPlayer player, World world, WindShieldEchoData data) {
+        if (data.attacker != null && data.reflectedDamage > 0) {
+            // Reflect damage to attacker
+            if (data.attacker instanceof EntityLivingBase) {
+                EntityLivingBase attacker = (EntityLivingBase) data.attacker;
+                attacker.attackEntityFrom(DamageSource.causePlayerDamage(player), data.reflectedDamage);
+            }
+            
+            // Apply area damage around attacker
+            Vec3d attackerPos = new Vec3d(data.attacker.posX, data.attacker.posY + data.attacker.height / 2, data.attacker.posZ);
+            AxisAlignedBB areaBox = new AxisAlignedBB(
+                attackerPos.x - AREA_DAMAGE_RANGE, attackerPos.y - AREA_DAMAGE_RANGE, attackerPos.z - AREA_DAMAGE_RANGE,
+                attackerPos.x + AREA_DAMAGE_RANGE, attackerPos.y + AREA_DAMAGE_RANGE, attackerPos.z + AREA_DAMAGE_RANGE
+            );
+            
+            List<EntityLivingBase> nearbyEntities = world.getEntitiesWithinAABB(
+                EntityLivingBase.class, areaBox
+            );
+            
+            for (EntityLivingBase entity : nearbyEntities) {
+                if (entity != player && entity != data.attacker && entity.isEntityAlive()) {
+                    // Check if entity is hostile (not a player or friendly mob)
+                    if (entity instanceof EntityPlayer || !entity.isOnSameTeam(player)) {
+                        entity.attackEntityFrom(DamageSource.causePlayerDamage(player), AREA_DAMAGE_AMOUNT);
+                    }
+                }
+            }
+            
+            // Play area damage sound
+            world.playSound(null, data.attacker.posX, data.attacker.posY, data.attacker.posZ, 
+                SoundEvents.ENTITY_LIGHTNING_THUNDER, SoundCategory.PLAYERS, 0.5F, 1.0F);
+        }
+    }
+    
+    /**
+     * Process Wind Shield Echo shield expiration
+     */
+    private void processWindShieldEchoExpiration(World world) {
+        long currentTime = world.getTotalWorldTime();
+        
+        // Process all players with wind shield echo data
+        windShieldEchoPlayers.entrySet().removeIf(entry -> {
+            UUID playerUUID = entry.getKey();
+            WindShieldEchoData data = entry.getValue();
+            
+            // Find the player in the world
+            EntityPlayer player = world.getPlayerEntityByUUID(playerUUID);
+            if (player == null) {
+                return true; // Remove data for players not in world
+            }
+            
+            // Check if player still has Wind Shield Echo equipped
+            boolean hasWindShieldEcho = hasWindShieldEcho(player);
+            if (!hasWindShieldEcho) {
+                return true; // Remove data if player doesn't have the item
+            }
+            
+            // Check if shield has expired
+            if (data.hasShield && currentTime >= data.shieldEndTime) {
+                data.hasShield = false;
+                data.shieldEndTime = 0;
+                data.reflectedDamage = 0.0F;
+                data.attacker = null;
+            }
+            
+            return false; // Keep this data
+        });
+    }
+    
+    /**
+     * Check if player has Wind Shield Echo equipped
+     */
+    private boolean hasWindShieldEcho(EntityPlayer player) {
+        IBaublesItemHandler baublesHandler = BaublesApi.getBaublesHandler(player);
+        for (int i = 0; i < baublesHandler.getSlots(); i++) {
+            ItemStack stack = baublesHandler.getStackInSlot(i);
+            if (!stack.isEmpty() && stack.getItem() == ModItems.WIND_SHIELD_ECHO) {
                 return true;
             }
         }

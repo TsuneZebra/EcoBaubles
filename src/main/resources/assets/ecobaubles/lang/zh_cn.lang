@@ -1,4 +1,5 @@
 item.wind_amulet.name=风之护符
+item.wind_amulet.desc=§7蕴含风的微弱力量，在受到威胁时可能会发挥出作用
 item.skyfeather_amulet.name=凌天坠羽
 item.skyfeather_amulet.desc=§b含有风的意识的残留，在危急时刻会发挥出极大的作用
 item.skyfeather_amulet.ready=§a准备就绪
@@ -17,5 +18,11 @@ item.wind_crown.desc=§b风之王冠，蕴含着强大的风之力量
 item.wind_crown.shield_info=§7当生命值低于50%%时，获得风护盾
 item.wind_crown.projectile_info=§7风护盾可吸收40%%近战伤害和70%%弹射物伤害
 item.wind_crown.regen_info=§7护盾破碎后40秒内无法重新生成
+item.wind_shield_echo.name=风盾回音
+item.wind_shield_echo.desc=§b受到伤害时有概率生成风盾
+item.wind_shield_echo.probability=§7概率触发风盾防御
+item.wind_shield_echo.immunity=§75秒内免疫一次受到的伤害
+item.wind_shield_echo.reflection=§7将免疫的伤害反伤给攻击者
+item.wind_shield_echo.area_damage=§7对攻击者周围敌方造成10点范围伤害
 
 itemGroup.ecobaubles=生态护符

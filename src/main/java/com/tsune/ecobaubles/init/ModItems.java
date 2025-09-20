@@ -7,6 +7,7 @@ import com.tsune.ecobaubles.items.ItemRingWind;
 import com.tsune.ecobaubles.items.ItemRingWindAttraction;
 import com.tsune.ecobaubles.items.ItemWindShadowBelt;
 import com.tsune.ecobaubles.items.ItemWindCrown;
+import com.tsune.ecobaubles.items.ItemWindShieldEcho;
 import net.minecraft.item.Item;
 
 import java.util.ArrayList;
@@ -23,4 +24,5 @@ public class ModItems {
     public static final Item CRACK_WIND_RING = new ItemRingCrackWind("crack_wind_ring");
     public static final Item WIND_SHADOW_BELT = new ItemWindShadowBelt("wind_shadow_belt");
     public static final Item WIND_CROWN = new ItemWindCrown("wind_crown");
+    public static final Item WIND_SHIELD_ECHO = new ItemWindShieldEcho("wind_shield_echo");
 }
