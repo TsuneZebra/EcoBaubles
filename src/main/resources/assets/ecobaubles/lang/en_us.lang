@@ -15,7 +15,7 @@ item.wind_shadow_belt.name=Wind Shadow Belt
 item.wind_shadow_belt.desc=§7After sprinting for 10 seconds, gain Wind State: +30%% speed, +1 jump, 15%% dodge chance; gain 1 Wind Mark every 7 seconds (max 5), +3%% speed per mark, converts to wind shield when taking damage
 item.wind_crown.name=Wind Crown
 item.wind_crown.desc=§bThe crown of the Wind, containing powerful wind energy
-item.wind_crown.shield_info=§7Gain wind shield when health drops below 50%%
+item.wind_crown.shield_info=§7Gain wind shield of 50%% health
 item.wind_crown.projectile_info=§7Wind shield absorbs 40%% melee damage and 70%% projectile damage
 item.wind_crown.regen_info=§7Shield cannot regenerate for 40 seconds after breaking
 item.wind_shield_echo.name=Wind Shield Echo
@@ -24,5 +24,7 @@ item.wind_shield_echo.probability=§7Probability triggers wind shield defense
 item.wind_shield_echo.immunity=§7Immune to next damage for 5 seconds
 item.wind_shield_echo.reflection=§7Reflects immune damage back to attacker
 item.wind_shield_echo.area_damage=§7Deals 10 area damage to enemies around attacker
+item.wind_charm.name=Wind Charm
+item.wind_charm.desc=§7After equipping, you can press the jump button to step on the wind at any time after jumping. You can also enhance this behavior by leaning against the wall. Each jump increases in height (up to +8 squares)
 
 itemGroup.ecobaubles=EcoBaubles

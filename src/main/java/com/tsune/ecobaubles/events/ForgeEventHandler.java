@@ -3,6 +3,7 @@ package com.tsune.ecobaubles.events;
 import baubles.api.BaublesApi;
 import baubles.api.cap.IBaublesItemHandler;
 import com.tsune.ecobaubles.init.ModItems;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
@@ -11,6 +12,7 @@ import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import java.util.UUID;
 import net.minecraft.entity.player.EntityPlayer;
@@ -31,6 +33,9 @@ import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.EntityJoinWorldEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.common.gameevent.InputEvent;
+import net.minecraft.client.settings.KeyBinding;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
 
 import java.util.List;
 import java.util.HashMap;
@@ -79,6 +84,11 @@ public class ForgeEventHandler {
     private static final double AREA_DAMAGE_RANGE = 2.0D; // 2 block radius for area damage
     private static final float AREA_DAMAGE_AMOUNT = 10.0F; // 10 damage to nearby enemies
     
+    // Wind Charm - Continuous jumping system
+    private static final Map<UUID, WindCharmData> windCharmPlayers = new HashMap<>();
+    private static final int JUMP_COOLDOWN = 10; // 0.5 seconds * 20 ticks/second
+    private static final double JUMP_FORCE = 0.4D; // Force for additional jumps
+    
     // Data class to track attraction effects
     private static class AttractionData {
         public final double centerX, centerY, centerZ;
@@ -118,6 +128,13 @@ public class ForgeEventHandler {
         public int shieldEndTime = 0; // When the shield expires (in ticks)
         public float reflectedDamage = 0.0F; // Damage to reflect to attacker
         public Entity attacker = null; // The entity that triggered the shield
+    }
+    
+    // Data class to track Wind Charm effects
+    private static class WindCharmData {
+        public int lastJumpTime = 0; // Last time player jumped (in ticks)
+        public boolean canJump = false; // Whether player can perform additional jump
+        public int jumpCount = 0; // Number of consecutive jumps (resets when on ground)
     }
 
     @SubscribeEvent
@@ -255,6 +272,21 @@ public class ForgeEventHandler {
         if (event.getEntityLiving() instanceof EntityPlayer) {
             EntityPlayer player = (EntityPlayer) event.getEntityLiving();
             IBaublesItemHandler baublesHandler = BaublesApi.getBaublesHandler(player);
+            
+            // Check for Wind Charm first
+            boolean hasWindCharm = false;
+            for (int i = 0; i < baublesHandler.getSlots(); i++) {
+                if (baublesHandler.getStackInSlot(i).getItem() == ModItems.WIND_CHARM) {
+                    hasWindCharm = true;
+                    break;
+                }
+            }
+            
+            if (hasWindCharm) {
+                handleWindCharmJump(player);
+            }
+            
+            // Check for Skyfeather Amulet
             for (int i = 0; i < baublesHandler.getSlots(); i++) {
                 if (baublesHandler.getStackInSlot(i).getItem() == ModItems.SKYFEATHER_AMULET) {
                     player.motionY += 0.2D; // Add extra jump height
@@ -647,7 +679,24 @@ public class ForgeEventHandler {
             if (data.inWindState) {
                 data.inWindState = false;
                 data.windStateTicks = 0;
+                
+                // Remove 30% speed bonus when belt is removed
+                IAttributeInstance movementSpeed = player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
+                UUID windStateSpeedUUID = UUID.fromString("87654321-4321-4321-4321-210987654322");
+                AttributeModifier existingModifier = movementSpeed.getModifier(windStateSpeedUUID);
+                if (existingModifier != null) {
+                    movementSpeed.removeModifier(existingModifier);
+                }
             }
+            
+            // Remove wind mark speed bonus when belt is removed
+            IAttributeInstance movementSpeed = player.getEntityAttribute(SharedMonsterAttributes.MOVEMENT_SPEED);
+            UUID windMarkSpeedUUID = UUID.fromString("87654321-4321-4321-4321-210987654321");
+            AttributeModifier existingWindMarkModifier = movementSpeed.getModifier(windMarkSpeedUUID);
+            if (existingWindMarkModifier != null) {
+                movementSpeed.removeModifier(existingWindMarkModifier);
+            }
+            
             data.sprintTicks = 0;
             data.windMarks = 0;
             data.windShield = 0;
@@ -1038,6 +1087,236 @@ public class ForgeEventHandler {
         for (int i = 0; i < baublesHandler.getSlots(); i++) {
             ItemStack stack = baublesHandler.getStackInSlot(i);
             if (!stack.isEmpty() && stack.getItem() == ModItems.WIND_SHIELD_ECHO) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    // ===== WIND CHARM FUNCTIONALITY =====
+    
+    /**
+     * Handle Wind Charm jump logic
+     */
+    private void handleWindCharmJump(EntityPlayer player) {
+        if (player.world.isRemote) {
+            return;
+        }
+        
+        UUID playerId = player.getUniqueID();
+        WindCharmData data = windCharmPlayers.get(playerId);
+        
+        if (data == null) {
+            data = new WindCharmData();
+            windCharmPlayers.put(playerId, data);
+        }
+        
+        int currentTime = (int) player.world.getTotalWorldTime();
+        
+        // Reset jump ability if enough time has passed since last jump
+        if (currentTime - data.lastJumpTime > JUMP_COOLDOWN) {
+            data.canJump = true;
+        }
+        
+        // Reset jump count when on ground (normal jump)
+        if (player.onGround) {
+            data.jumpCount = 0;
+        }
+        
+        // Update jump data
+        data.lastJumpTime = currentTime;
+        data.canJump = true; // Always allow additional jumps
+        
+        // Play jump sound
+        player.world.playSound(null, player.posX, player.posY, player.posZ, 
+            SoundEvents.ENTITY_ENDERDRAGON_FLAP, SoundCategory.PLAYERS, 0.5F, 1.2F);
+    }
+    
+    /**
+     * Handle additional jump when jump key is pressed
+     */
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    public void onKeyInput(InputEvent.KeyInputEvent event) {
+        // This will be handled by the client-side keybind system
+        // The actual jump logic will be triggered from the client
+    }
+    
+    /**
+     * Check if player can perform additional jump with Wind Charm
+     */
+    public static boolean canWindCharmJump(EntityPlayer player) {
+        if (player.world.isRemote) {
+            return false; // Only server-side logic
+        }
+        
+        // Check if player has Wind Charm
+        IBaublesItemHandler baublesHandler = BaublesApi.getBaublesHandler(player);
+        boolean hasWindCharm = false;
+        for (int i = 0; i < baublesHandler.getSlots(); i++) {
+            if (baublesHandler.getStackInSlot(i).getItem() == ModItems.WIND_CHARM) {
+                hasWindCharm = true;
+                break;
+            }
+        }
+        
+        if (!hasWindCharm) {
+            return false;
+        }
+        
+        UUID playerId = player.getUniqueID();
+        WindCharmData data = windCharmPlayers.get(playerId);
+        
+        if (data == null) {
+            return false;
+        }
+        
+        // Check if player is on ground or can jump
+        if (player.onGround) {
+            return false; // Normal jump, not additional jump
+        }
+        
+        // Check if player is at jump peak (vertical velocity close to 0)
+        // Only allow additional jump when player is at the peak of their jump
+        double verticalVelocity = player.motionY;
+        if (verticalVelocity > 0.3D || verticalVelocity < -0.3D) {
+            return false; // Not at jump peak
+        }
+        
+        // Check if enough time has passed and can still jump
+        int currentTime = (int) player.world.getTotalWorldTime();
+        if (currentTime - data.lastJumpTime > JUMP_COOLDOWN) {
+            data.canJump = true;
+            return false;
+        }
+        
+        return data.canJump;
+    }
+    
+    /**
+     * Check if player is backed against a wall (only check leg area behind player)
+     */
+    private static boolean isPlayerBackedAgainstWall(EntityPlayer player) {
+        // Get player's look direction (where they're facing)
+        Vec3d lookVec = player.getLookVec();
+        
+        // Calculate the opposite direction (behind the player)
+        Vec3d behindVec = lookVec.scale(-1.0D);
+        
+        // Check only leg area behind the player (from feet to knees)
+        // Player height is about 1.8 blocks, so check from Y-0.5 to Y+0.2 (leg area only)
+        double[] checkHeights = {-0.5D, -0.2D, 0.0D, 0.2D}; // Check at feet, ankles, shins, and knees
+        
+        for (double height : checkHeights) {
+            BlockPos behindPos = new BlockPos(
+                player.posX + behindVec.x * 1.0D, // Closer detection for easier triggering
+                player.posY + height,
+                player.posZ + behindVec.z * 1.0D
+            );
+            
+            // Check if there's any solid block behind the player at this height
+            IBlockState behindBlock = player.world.getBlockState(behindPos);
+            if (behindBlock.isFullBlock() && behindBlock.isOpaqueCube()) {
+                return true; // Found a wall behind the legs
+            }
+        }
+        
+        return false; // No wall found behind the legs
+    }
+    
+    /**
+     * Calculate wall jump direction based on player's look direction
+     */
+    private static Vec3d calculateWallJumpDirection(EntityPlayer player) {
+        // Get player's look direction
+        Vec3d lookVec = player.getLookVec();
+        
+        // For wall jump, we want to jump in the direction the player is looking
+        // but also add some upward component
+        return new Vec3d(lookVec.x, 0.3D, lookVec.z).normalize();
+    }
+    
+    /**
+     * Perform additional jump with Wind Charm - preserve horizontal velocity and apply jump boost effects
+     */
+    public static void performWindCharmJump(EntityPlayer player) {
+        if (player.world.isRemote) {
+            return;
+        }
+        
+        UUID playerId = player.getUniqueID();
+        WindCharmData data = windCharmPlayers.get(playerId);
+        
+        if (data == null || !data.canJump) {
+            return;
+        }
+        
+        // Increment jump count
+        data.jumpCount++;
+        
+        // Check if player is backed against a wall for wall jump
+        boolean isWallJump = isPlayerBackedAgainstWall(player);
+        
+        // Store current horizontal velocity to preserve it (unless wall jump)
+        double currentMotionX = player.motionX;
+        double currentMotionZ = player.motionZ;
+        
+        // Calculate base jump force (vanilla default is 0.42D)
+        double jumpForce = 0.42D;
+        
+        // Apply jump boost potion effects if active
+        if (player.isPotionActive(MobEffects.JUMP_BOOST)) {
+            PotionEffect jumpBoostEffect = player.getActivePotionEffect(MobEffects.JUMP_BOOST);
+            if (jumpBoostEffect != null) {
+                int amplifier = jumpBoostEffect.getAmplifier();
+                jumpForce += (amplifier + 1) * 0.1F; // Apply jump boost effect
+            }
+        }
+        
+        // Calculate additional jump height based on jump count (max 8 additional height)
+        double additionalHeight = Math.min(data.jumpCount, 8);
+        double additionalForce = additionalHeight * 0.1D; // Additional force per jump count
+        
+        if (isWallJump) {
+            // Wall jump: powerful jump in the direction player is looking
+            Vec3d wallJumpDirection = calculateWallJumpDirection(player);
+            
+            // Enhanced jump force for wall jump (5x stronger for higher jump)
+            double wallJumpForce = (jumpForce + additionalForce) * 5.0D;
+            
+            // Apply wall jump with enhanced horizontal velocity
+            player.motionY = wallJumpForce;
+            player.motionX = wallJumpDirection.x * 1.5D; // Very strong horizontal push
+            player.motionZ = wallJumpDirection.z * 1.5D; // Very strong horizontal push
+            
+            // Play special wall jump sound
+            player.world.playSound(null, player.posX, player.posY, player.posZ,
+                SoundEvents.ENTITY_ENDERDRAGON_FLAP, SoundCategory.PLAYERS, 1.2F, 0.6F);
+        } else {
+            // Normal air jump: preserve horizontal velocity
+            player.motionY = jumpForce + additionalForce;
+            player.motionX = currentMotionX; // Preserve horizontal X velocity
+            player.motionZ = currentMotionZ; // Preserve horizontal Z velocity
+        }
+        player.velocityChanged = true;
+        
+        // Update jump data
+        data.lastJumpTime = (int) player.world.getTotalWorldTime();
+        data.canJump = true; // Always allow additional jumps
+        
+        // Play jump sound with pitch based on jump count
+        float pitch = 1.0F + (data.jumpCount * 0.1F);
+        player.world.playSound(null, player.posX, player.posY, player.posZ, 
+            SoundEvents.ENTITY_ENDERDRAGON_FLAP, SoundCategory.PLAYERS, 0.6F, pitch);
+    }
+    
+    /**
+     * Check if player has Wind Charm equipped
+     */
+    private boolean hasWindCharm(EntityPlayer player) {
+        IBaublesItemHandler baublesHandler = BaublesApi.getBaublesHandler(player);
+        for (int i = 0; i < baublesHandler.getSlots(); i++) {
+            ItemStack stack = baublesHandler.getStackInSlot(i);
+            if (!stack.isEmpty() && stack.getItem() == ModItems.WIND_CHARM) {
                 return true;
             }
         }
