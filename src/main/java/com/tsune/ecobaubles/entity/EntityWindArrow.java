@@ -1,5 +1,8 @@
 package com.tsune.ecobaubles.entity;
 
+import baubles.api.BaublesApi;
+import baubles.api.cap.IBaublesItemHandler;
+import com.tsune.ecobaubles.init.ModItems;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
@@ -32,12 +35,27 @@ public class EntityWindArrow extends EntityArrow {
             if (entity instanceof EntityLivingBase) {
                 EntityLivingBase livingEntity = (EntityLivingBase) entity;
                 
+                // 检测风灵饰品
+                boolean hasWindSpirit = false;
+                if (this.shootingEntity instanceof EntityPlayer) {
+                    EntityPlayer player = (EntityPlayer) this.shootingEntity;
+                    IBaublesItemHandler baublesHandler = BaublesApi.getBaublesHandler(player);
+                    for (int i = 0; i < baublesHandler.getSlots(); i++) {
+                        ItemStack stack = baublesHandler.getStackInSlot(i);
+                        if (!stack.isEmpty() && stack.getItem() == ModItems.WIND_SPIRIT) {
+                            hasWindSpirit = true;
+                            break;
+                        }
+                    }
+                }
+                
                 // 15 armor-piercing damage
                 DamageSource armorPiercing = DamageSource.causeArrowDamage(this, this.shootingEntity).setDamageBypassesArmor();
                 livingEntity.attackEntityFrom(armorPiercing, 15.0F);
 
-                // 25% max health true damage (up to 200)
-                float trueDamage = Math.min(livingEntity.getMaxHealth() * 0.25F, 200.0F);
+                // 风灵增强：最大生命值伤害变为33%
+                float maxHealthDamage = hasWindSpirit ? 0.33F : 0.25F;
+                float trueDamage = Math.min(livingEntity.getMaxHealth() * maxHealthDamage, 200.0F);
                 DamageSource trueDamageSource = DamageSource.causeArrowDamage(this, this.shootingEntity).setDamageIsAbsolute();
                 livingEntity.attackEntityFrom(trueDamageSource, trueDamage);
             }

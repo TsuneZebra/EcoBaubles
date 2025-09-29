@@ -49,15 +49,18 @@ public class ForgeEventHandler {
     // Wind Attraction Ring - Continuous attraction system
     private static final Map<UUID, AttractionData> activeAttractions = new HashMap<>();
     private static final int ATTRACTION_DURATION = 30; // 1.5 seconds (30 ticks)
+    private static final int ATTRACTION_DURATION_WIND_SPIRIT = 40; // 风灵增强：+0.5s (2.0 seconds)
     private static final double ATTRACTION_RANGE = 8.0D;
     private static final double ATTRACTION_FORCE = 0.1D; // Reduced force for continuous effect
     
     // Crack Wind Ring - Bow speed and arrow effects
     private static final UUID CRACK_WIND_BOW_SPEED_UUID = UUID.fromString("12345678-1234-1234-1234-123456789012");
     private static final double BOW_SPEED_BONUS = 0.20; // 20% faster bow speed
+    private static final double BOW_SPEED_BONUS_WIND_SPIRIT = 0.30; // 风灵增强：拉弓速度额外+10%
     private static final double ARROW_SPEED_BONUS = 0.20; // 20% faster arrow speed
     private static final double CHAIN_DAMAGE_RANGE = 3.0D; // 3 block radius for chain damage
     private static final double CHAIN_DAMAGE_MULTIPLIER = 0.20; // 20% of original damage
+    private static final double CHAIN_DAMAGE_MULTIPLIER_WIND_SPIRIT = 0.35; // 风灵增强：穿透范围伤害变为35%
     
     // Wind Shadow Belt - Sprint buff and wind marks system
     private static final Map<UUID, WindShadowData> windShadowPlayers = new HashMap<>();
@@ -66,11 +69,14 @@ public class ForgeEventHandler {
     private static final int MAX_WIND_MARKS = 5;
     private static final double WIND_MARK_SPEED_BONUS = 0.03; // 3% per mark
     private static final double WIND_SHIELD_DAMAGE_REDUCTION = 0.15; // 15% per mark
+    private static final double WIND_SHIELD_DAMAGE_REDUCTION_WIND_SPIRIT = 0.18; // 风灵增强：每层抵挡伤害变为18%
     private static final double DODGE_CHANCE = 0.15; // 15% dodge chance during wind state
+    private static final double DODGE_CHANCE_WIND_SPIRIT = 0.20; // 风灵增强：风行状态下闪避几率提升5%
     
     // Wind Crown - Wind shield system
     private static final Map<UUID, WindCrownData> windCrownPlayers = new HashMap<>();
     private static final double WIND_SHIELD_PERCENTAGE = 0.50; // 50% of max health
+    private static final double WIND_SHIELD_PERCENTAGE_WIND_SPIRIT = 0.75; // 风灵增强：获得的最大生命值护盾变为75%
     private static final double DAMAGE_ABSORPTION = 0.40; // 40% damage absorption
     private static final double PROJECTILE_ABSORPTION = 0.70; // 70% projectile damage absorption
     private static final int SHIELD_REGEN_DELAY = 800; // 40 seconds * 20 ticks/second
@@ -83,11 +89,13 @@ public class ForgeEventHandler {
     private static final int SHIELD_DURATION = 100; // 5 seconds * 20 ticks/second
     private static final double AREA_DAMAGE_RANGE = 2.0D; // 2 block radius for area damage
     private static final float AREA_DAMAGE_AMOUNT = 10.0F; // 10 damage to nearby enemies
+    private static final float AREA_DAMAGE_AMOUNT_WIND_SPIRIT = 16.0F; // 风灵增强：造成的伤害变为16点
     
     // Wind Charm - Continuous jumping system
     private static final Map<UUID, WindCharmData> windCharmPlayers = new HashMap<>();
     private static final int JUMP_COOLDOWN = 10; // 0.5 seconds * 20 ticks/second
     private static final double JUMP_FORCE = 0.4D; // Force for additional jumps
+    private static final double JUMP_FORCE_WIND_SPIRIT = 0.8D; // 风灵增强：每次跳跃高度递增由1格变为2格
     
     // Data class to track attraction effects
     private static class AttractionData {
@@ -156,23 +164,37 @@ public class ForgeEventHandler {
         boolean hasWindShadowBelt = false;
         boolean hasWindCrown = false;
         boolean hasWindShieldEcho = false;
+        boolean hasWindSpirit = false;
 
+        // 第一遍：检测所有饰品
         for (int i = 0; i < baublesHandler.getSlots(); i++) {
             ItemStack stack = baublesHandler.getStackInSlot(i);
             if (!stack.isEmpty()) {
-                if (stack.getItem() == ModItems.WIND_AMULET && event.getAmount() > 6.0F) {
-                    handleWindAmulet(player, world);
-                    return; // Wind Amulet triggered, stop processing for this event
+                if (stack.getItem() == ModItems.WIND_AMULET) {
+                    // 风护符会在第二遍处理
                 } else if (stack.getItem() == ModItems.SKYFEATHER_AMULET) {
                     amuletStack = stack;
                     amuletSlot = i;
-                    // Don't break, we might find wind amulet first
                 } else if (stack.getItem() == ModItems.WIND_SHADOW_BELT) {
                     hasWindShadowBelt = true;
                 } else if (stack.getItem() == ModItems.WIND_CROWN) {
                     hasWindCrown = true;
                 } else if (stack.getItem() == ModItems.WIND_SHIELD_ECHO) {
                     hasWindShieldEcho = true;
+                } else if (stack.getItem() == ModItems.WIND_SPIRIT) {
+                    hasWindSpirit = true;
+                }
+            }
+        }
+        
+        // 第二遍：处理风护符（现在hasWindSpirit已经正确设置）
+        for (int i = 0; i < baublesHandler.getSlots(); i++) {
+            ItemStack stack = baublesHandler.getStackInSlot(i);
+            if (!stack.isEmpty() && stack.getItem() == ModItems.WIND_AMULET) {
+                float threshold = hasWindSpirit ? 4.8F : 6.0F; // 风灵降低20%阈值
+                if (event.getAmount() > threshold) {
+                    handleWindAmulet(player, world, hasWindSpirit);
+                    return; // Wind Amulet triggered, stop processing for this event
                 }
             }
         }
@@ -196,11 +218,11 @@ public class ForgeEventHandler {
         
         // Handle Skyfeather Amulet logic if found and damage is lethal
         if (!amuletStack.isEmpty() && player.getHealth() - event.getAmount() <= 0) {
-            handleSkyfeatherAmulet(event, player, world, amuletStack);
+            handleSkyfeatherAmulet(event, player, world, amuletStack, hasWindSpirit);
         }
     }
 
-    private void handleWindAmulet(EntityPlayer player, World world) {
+    private void handleWindAmulet(EntityPlayer player, World world, boolean hasWindSpirit) {
         double range = 5.0D;
         List<EntityLivingBase> entities = world.getEntitiesWithinAABB(EntityLivingBase.class, player.getEntityBoundingBox().grow(range));
         for (EntityLivingBase entity : entities) {
@@ -208,11 +230,13 @@ public class ForgeEventHandler {
                 entity.knockBack(player, 1.0F, player.posX - entity.posX, player.posZ - entity.posZ);
             }
         }
-        player.addPotionEffect(new PotionEffect(MobEffects.SPEED, 60, 1));
+        // 风灵增强：移速额外+5%
+        int speedLevel = hasWindSpirit ? 2 : 1; // 风灵时速度等级+1
+        player.addPotionEffect(new PotionEffect(MobEffects.SPEED, 60, speedLevel));
         world.playSound(null, player.posX, player.posY, player.posZ, SoundEvents.ITEM_ELYTRA_FLYING, SoundCategory.PLAYERS, 0.8F, 1.0F);
     }
 
-    private void handleSkyfeatherAmulet(LivingHurtEvent event, EntityPlayer player, World world, ItemStack amuletStack) {
+    private void handleSkyfeatherAmulet(LivingHurtEvent event, EntityPlayer player, World world, ItemStack amuletStack, boolean hasWindSpirit) {
         NBTTagCompound nbt = amuletStack.hasTagCompound() ? amuletStack.getTagCompound() : new NBTTagCompound();
         long lastTriggerTime = nbt.getLong(COOLDOWN_TAG);
 
@@ -228,12 +252,14 @@ public class ForgeEventHandler {
         nbt.setLong(COOLDOWN_TAG, world.getTotalWorldTime());
         amuletStack.setTagCompound(nbt);
 
-        // Apply effects
-        player.addPotionEffect(new PotionEffect(MobEffects.ABSORPTION, 160, 4)); // Absorption V (level 4) for 8s
-        player.addPotionEffect(new PotionEffect(MobEffects.REGENERATION, 160, 1)); // Regeneration II (level 1) for 8s
-        player.addPotionEffect(new PotionEffect(MobEffects.SPEED, 160, 2)); // Speed III (level 2) for 8s
-        player.addPotionEffect(new PotionEffect(MobEffects.JUMP_BOOST, 160, 4)); // Jump Boost V (level 4) for 8s
-        player.addPotionEffect(new PotionEffect(MobEffects.RESISTANCE, 160, 0)); // Resistance I (level 0) for 8s
+        // Apply effects - 风灵增强：移速额外+5%，庇护时间+4s
+        int duration = hasWindSpirit ? 200 : 160; // 风灵时庇护时间+4s (10s vs 8s)
+        int speedLevel = hasWindSpirit ? 3 : 2; // 风灵时移速额外+5%
+        player.addPotionEffect(new PotionEffect(MobEffects.ABSORPTION, duration, 4)); // Absorption V (level 4)
+        player.addPotionEffect(new PotionEffect(MobEffects.REGENERATION, duration, 1)); // Regeneration II (level 1)
+        player.addPotionEffect(new PotionEffect(MobEffects.SPEED, duration, speedLevel)); // Speed enhanced by wind spirit
+        player.addPotionEffect(new PotionEffect(MobEffects.JUMP_BOOST, duration, 4)); // Jump Boost V (level 4)
+        player.addPotionEffect(new PotionEffect(MobEffects.RESISTANCE, duration, 0)); // Resistance I (level 0)
 
         // Launch logic - check for blocks in 8 blocks above
         boolean hasBlockAbove = false;
@@ -250,16 +276,19 @@ public class ForgeEventHandler {
             List<EntityLivingBase> entities = world.getEntitiesWithinAABB(EntityLivingBase.class, player.getEntityBoundingBox().grow(range));
              for (EntityLivingBase entity : entities) {
                 if (entity != player) {
-                    entity.knockBack(player, 2.5F, player.posX - entity.posX, player.posZ - entity.posZ);
-                    // Add 20 damage to knocked back entities
-                    entity.attackEntityFrom(DamageSource.causePlayerDamage(player), 20.0F);
+                    // 风灵增强：击退伤害+20%
+                    float knockbackForce = hasWindSpirit ? 3.0F : 2.5F;
+                    float damage = hasWindSpirit ? 24.0F : 20.0F;
+                    entity.knockBack(player, knockbackForce, player.posX - entity.posX, player.posZ - entity.posZ);
+                    // Add damage to knocked back entities
+                    entity.attackEntityFrom(DamageSource.causePlayerDamage(player), damage);
                 }
             }
         } else {
-            // Launch upwards
+            // Launch upwards - 风灵增强：飞升高度+20%
             Vec3d lookVec = player.getLookVec();
             player.motionX = lookVec.x * 0.1;
-            player.motionY = 2.2; // Strong upward launch
+            player.motionY = hasWindSpirit ? 2.64 : 2.2; // 风灵时飞升高度+20%
             player.motionZ = lookVec.z * 0.1;
             player.velocityChanged = true;
         }
@@ -432,11 +461,23 @@ public class ForgeEventHandler {
         double deathY = deadEntity.posY;
         double deathZ = deadEntity.posZ;
         
+        // 检测风灵饰品
+        boolean hasWindSpirit = false;
+        IBaublesItemHandler baublesHandler = BaublesApi.getBaublesHandler(player);
+        for (int i = 0; i < baublesHandler.getSlots(); i++) {
+            ItemStack stack = baublesHandler.getStackInSlot(i);
+            if (!stack.isEmpty() && stack.getItem() == ModItems.WIND_SPIRIT) {
+                hasWindSpirit = true;
+                break;
+            }
+        }
+        
         // Create unique ID for this attraction effect
         UUID attractionId = UUID.randomUUID();
         
-        // Start the attraction effect
-        activeAttractions.put(attractionId, new AttractionData(deathX, deathY, deathZ, world, ATTRACTION_DURATION));
+        // 风灵增强：吸引持续时间+0.5s
+        int duration = hasWindSpirit ? ATTRACTION_DURATION_WIND_SPIRIT : ATTRACTION_DURATION;
+        activeAttractions.put(attractionId, new AttractionData(deathX, deathY, deathZ, world, duration));
         
         // Play sound effect
         world.playSound(null, deathX, deathY, deathZ, SoundEvents.ENTITY_ENDERDRAGON_FLAP, SoundCategory.PLAYERS, 0.5F, 1.2F);
@@ -538,12 +579,16 @@ public class ForgeEventHandler {
     
     private void applyCrackWindRingEffects(EntityPlayer player) {
         if (hasCrackWindRing(player)) {
+            // 检测风灵饰品
+            boolean hasWindSpirit = hasWindSpirit(player);
+            double bowSpeedBonus = hasWindSpirit ? BOW_SPEED_BONUS_WIND_SPIRIT : BOW_SPEED_BONUS;
+            
             // Apply bow speed bonus
             IAttributeInstance bowSpeedAttribute = player.getEntityAttribute(SharedMonsterAttributes.ATTACK_SPEED);
             if (bowSpeedAttribute != null) {
                 AttributeModifier modifier = bowSpeedAttribute.getModifier(CRACK_WIND_BOW_SPEED_UUID);
                 if (modifier == null) {
-                    modifier = new AttributeModifier(CRACK_WIND_BOW_SPEED_UUID, "Crack Wind Bow Speed", BOW_SPEED_BONUS, 1);
+                    modifier = new AttributeModifier(CRACK_WIND_BOW_SPEED_UUID, "Crack Wind Bow Speed", bowSpeedBonus, 1);
                     bowSpeedAttribute.applyModifier(modifier);
                 }
             }
@@ -570,10 +615,25 @@ public class ForgeEventHandler {
         return false;
     }
     
+    private static boolean hasWindSpirit(EntityPlayer player) {
+        IBaublesItemHandler baublesHandler = BaublesApi.getBaublesHandler(player);
+        for (int i = 0; i < baublesHandler.getSlots(); i++) {
+            ItemStack stack = baublesHandler.getStackInSlot(i);
+            if (!stack.isEmpty() && stack.getItem() == ModItems.WIND_SPIRIT) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     private void applyChainDamage(LivingHurtEvent event, EntityPlayer shooter, EntityArrow arrow) {
         EntityLivingBase hitEntity = event.getEntityLiving();
         float originalDamage = event.getAmount();
-        float chainDamage = originalDamage * (float) CHAIN_DAMAGE_MULTIPLIER;
+        
+        // 风灵增强：穿透范围伤害变为35%
+        boolean hasWindSpirit = hasWindSpirit(shooter);
+        double chainMultiplier = hasWindSpirit ? CHAIN_DAMAGE_MULTIPLIER_WIND_SPIRIT : CHAIN_DAMAGE_MULTIPLIER;
+        float chainDamage = originalDamage * (float) chainMultiplier;
         
         if (chainDamage > 0) {
             // Find entities behind the hit target
@@ -624,8 +684,15 @@ public class ForgeEventHandler {
             windShadowPlayers.put(playerId, data);
         }
         
+
+        // 检测风灵饰品
+        boolean hasWindSpirit = hasWindSpirit(player);
+        double dodgeChance = hasWindSpirit ? DODGE_CHANCE_WIND_SPIRIT : DODGE_CHANCE;
+        double damageReduction = hasWindSpirit ? WIND_SHIELD_DAMAGE_REDUCTION_WIND_SPIRIT : WIND_SHIELD_DAMAGE_REDUCTION;
+        
+
         // Check for dodge during wind state
-        if (data.inWindState && world.rand.nextDouble() < DODGE_CHANCE) {
+        if (data.inWindState && world.rand.nextDouble() < dodgeChance) {
             event.setCanceled(true);
             world.playSound(null, player.posX, player.posY, player.posZ, 
                 SoundEvents.ENTITY_ENDERDRAGON_FLAP, SoundCategory.PLAYERS, 0.5F, 1.5F);
@@ -635,8 +702,8 @@ public class ForgeEventHandler {
         // Convert wind marks to shield and apply damage reduction
         if (data.windMarks > 0) {
             data.windShield = data.windMarks; // Convert all wind marks to shield
-            float damageReduction = (float) (data.windShield * WIND_SHIELD_DAMAGE_REDUCTION);
-            float newDamage = Math.max(0, event.getAmount() - damageReduction);
+            float damageReductionPercent = (float) (data.windShield * damageReduction);
+            float newDamage = event.getAmount() * (1.0f - damageReductionPercent);
             event.setAmount(newDamage);
             
             // Consume wind shield and reset wind marks
@@ -644,6 +711,7 @@ public class ForgeEventHandler {
             data.windMarks = 0; // Reset wind marks after consumption
             world.playSound(null, player.posX, player.posY, player.posZ, 
                 SoundEvents.ENTITY_ENDERDRAGON_FLAP, SoundCategory.PLAYERS, 0.3F, 1.0F);
+        } else {
         }
     }
     
@@ -738,7 +806,7 @@ public class ForgeEventHandler {
             if (data.windMarks < MAX_WIND_MARKS) {
                 data.windMarks++;
                 data.lastWindMarkTime = currentTime;
-                
+
                 // Play sound for wind mark
                 player.world.playSound(null, player.posX, player.posY, player.posZ, 
                     SoundEvents.ENTITY_ENDERDRAGON_FLAP, SoundCategory.PLAYERS, 0.2F, 1.0F);
@@ -832,11 +900,15 @@ public class ForgeEventHandler {
             windCrownPlayers.put(playerUUID, data);
         }
         
+        // 检测风灵饰品
+        boolean hasWindSpirit = hasWindSpirit(player);
+        double shieldPercentage = hasWindSpirit ? WIND_SHIELD_PERCENTAGE_WIND_SPIRIT : WIND_SHIELD_PERCENTAGE;
+        
         // Initialize wind shield if not active and not on cooldown
         if (!data.shieldActive) {
             long currentTime = world.getTotalWorldTime();
             if (currentTime - data.lastDamageTime >= SHIELD_REGEN_DELAY) {
-                data.maxWindShield = player.getMaxHealth() * (float)WIND_SHIELD_PERCENTAGE;
+                data.maxWindShield = player.getMaxHealth() * (float)shieldPercentage;
                 data.currentWindShield = data.maxWindShield;
                 data.shieldActive = true;
             }
@@ -1012,6 +1084,10 @@ public class ForgeEventHandler {
      */
     private void applyWindShieldEchoReflection(EntityPlayer player, World world, WindShieldEchoData data) {
         if (data.attacker != null && data.reflectedDamage > 0) {
+            // 检测风灵饰品
+            boolean hasWindSpirit = hasWindSpirit(player);
+            float areaDamage = hasWindSpirit ? AREA_DAMAGE_AMOUNT_WIND_SPIRIT : AREA_DAMAGE_AMOUNT;
+            
             // Reflect damage to attacker
             if (data.attacker instanceof EntityLivingBase) {
                 EntityLivingBase attacker = (EntityLivingBase) data.attacker;
@@ -1033,7 +1109,7 @@ public class ForgeEventHandler {
                 if (entity != player && entity != data.attacker && entity.isEntityAlive()) {
                     // Check if entity is hostile (not a player or friendly mob)
                     if (entity instanceof EntityPlayer || !entity.isOnSameTeam(player)) {
-                        entity.attackEntityFrom(DamageSource.causePlayerDamage(player), AREA_DAMAGE_AMOUNT);
+                        entity.attackEntityFrom(DamageSource.causePlayerDamage(player), areaDamage);
                     }
                 }
             }
@@ -1260,6 +1336,10 @@ public class ForgeEventHandler {
         double currentMotionX = player.motionX;
         double currentMotionZ = player.motionZ;
         
+        // 检测风灵饰品
+        boolean hasWindSpirit = hasWindSpirit(player);
+        double windSpiritForce = hasWindSpirit ? JUMP_FORCE_WIND_SPIRIT : JUMP_FORCE;
+        
         // Calculate base jump force (vanilla default is 0.42D)
         double jumpForce = 0.42D;
         
@@ -1274,7 +1354,7 @@ public class ForgeEventHandler {
         
         // Calculate additional jump height based on jump count (max 8 additional height)
         double additionalHeight = Math.min(data.jumpCount, 8);
-        double additionalForce = additionalHeight * 0.1D; // Additional force per jump count
+        double additionalForce = additionalHeight * windSpiritForce; // 风灵增强：每次跳跃高度递增由1格变为2格
         
         if (isWallJump) {
             // Wall jump: powerful jump in the direction player is looking

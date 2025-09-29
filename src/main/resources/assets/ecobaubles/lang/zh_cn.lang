@@ -27,4 +27,17 @@ item.wind_shield_echo.area_damage=§7对攻击者周围敌方造成10点范围�
 item.wind_charm.name=疾风镣
 item.wind_charm.desc=§7装备后，跳跃后可以在事宜时候按跳跃键踏风，可借助背靠墙壁加强该行为。每次跳跃高度递增（最高+8格）
 
+item.wind_spirit.name=风灵
+item.wind_spirit.desc=§b蕴含着不可描述的风的力量，你能感受到来自四面八方的每一丝微弱的风
+item.wind_spirit.effect_title=§6风灵增强效果：
+item.wind_spirit.wind_amulet_boost=§7风之护符：移速额外+5%%，触发阈值降低20%%
+item.wind_spirit.skyfeather_boost=§7凌天坠羽：移速额外+5%%，飞升高度+20%%，击退伤害+20%%，庇护时间+4s
+item.wind_spirit.wind_ring_boost=§7苍风戒：最大生命值伤害变为33%%
+item.wind_spirit.wind_attraction_boost=§7风引指环：吸引持续时间+0.5s
+item.wind_spirit.crack_wind_boost=§7裂风戒：拉弓速度额外+10%%，穿透范围伤害变为35%%
+item.wind_spirit.wind_shadow_belt_boost=§7风影束带：风行闪避+5%%，风灵印记抵挡伤害变为18%%
+item.wind_spirit.wind_crown_boost=§7风冠：最大生命值护盾变为75%%
+item.wind_spirit.wind_shield_echo_boost=§7风盾回音：造成伤害变为16点
+item.wind_spirit.wind_charm_boost=§7疾风镣：每次跳跃高度递增由1格变为2格
+
 itemGroup.ecobaubles=生态护符

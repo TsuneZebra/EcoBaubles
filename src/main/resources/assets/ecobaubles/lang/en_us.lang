@@ -27,4 +27,17 @@ item.wind_shield_echo.area_damage=§7Deals 10 area damage to enemies around atta
 item.wind_charm.name=Wind Charm
 item.wind_charm.desc=§7After equipping, you can press the jump button to step on the wind at any time after jumping. You can also enhance this behavior by leaning against the wall. Each jump increases in height (up to +8 squares)
 
+item.wind_spirit.name=Wind Spirit
+item.wind_spirit.desc=§bContains indescribable wind power, you can feel every subtle breeze from all directions
+item.wind_spirit.effect_title=§6Wind Spirit Enhancement Effects:
+item.wind_spirit.wind_amulet_boost=§7Wind Amulet: Additional +5%% speed, trigger threshold -20%%
+item.wind_spirit.skyfeather_boost=§7Skyfeather: Additional +5%% speed, launch height +20%%, knockback damage +20%%, protection time +4s
+item.wind_spirit.wind_ring_boost=§7Wind Ring: Max health damage becomes 33%%
+item.wind_spirit.wind_attraction_boost=§7Wind Attraction Ring: Attraction duration +0.5s
+item.wind_spirit.crack_wind_boost=§7Crack Wind Ring: Additional +10%% bow speed, penetration area damage becomes 35%%
+item.wind_spirit.wind_shadow_belt_boost=§7Wind Shadow Belt: Wind state dodge +5%%, wind mark damage reduction becomes 18%%
+item.wind_spirit.wind_crown_boost=§7Wind Crown: Max health shield becomes 75%%
+item.wind_spirit.wind_shield_echo_boost=§7Wind Shield Echo: Damage dealt becomes 16 points
+item.wind_spirit.wind_charm_boost=§7Wind Charm: Each jump height increment changes from 1 block to 2 blocks
+
 itemGroup.ecobaubles=EcoBaubles
