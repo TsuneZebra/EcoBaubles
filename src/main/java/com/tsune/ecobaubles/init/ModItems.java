@@ -1,6 +1,7 @@
 package com.tsune.ecobaubles.init;
 
 import com.tsune.ecobaubles.items.ItemAmuletSkyfeather;
+import com.tsune.ecobaubles.items.ItemAmuletFlameDemonEye;
 import com.tsune.ecobaubles.items.ItemAmuletWind;
 import com.tsune.ecobaubles.items.ItemRingCrackWind;
 import com.tsune.ecobaubles.items.ItemRingWind;
@@ -21,6 +22,7 @@ public class ModItems {
     // Items
     public static final Item WIND_AMULET = new ItemAmuletWind("wind_amulet");
     public static final Item SKYFEATHER_AMULET = new ItemAmuletSkyfeather("skyfeather_amulet");
+    public static final Item FLAME_DEMON_EYE = new ItemAmuletFlameDemonEye("flame_demon_eye");
     public static final Item WIND_RING = new ItemRingWind("wind_ring");
     public static final Item WIND_ATTRACTION_RING = new ItemRingWindAttraction("wind_attraction_ring");
     public static final Item CRACK_WIND_RING = new ItemRingCrackWind("crack_wind_ring");

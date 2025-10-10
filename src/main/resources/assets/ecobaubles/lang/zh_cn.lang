@@ -1,7 +1,14 @@
+key.ecobaubles.toggle_passive=切换被动
+item.flame_demon_eye.name=炎魔之眼
+item.flame_demon_eye.desc=炎魔之眼：生命越低攻击越高；致命时不屈1（7s，冷却300s）；可开关“玩火自焚”
+item.flame_demon_eye.toggle_on=玩火自焚：已开启（+50%%伤害，承受35%%自伤）
+item.flame_demon_eye.toggle_off=玩火自焚：已关闭
+item.flame_demon_eye.cooldown=§a不屈冷却中
+item.flame_demon_eye.ready=§a不屈已就绪
 item.wind_amulet.name=风之护符
 item.wind_amulet.desc=§7蕴含风的微弱力量，在受到威胁时可能会发挥出作用
 item.skyfeather_amulet.name=凌天坠羽
-item.skyfeather_amulet.desc=§b含有风的意识的残留，在危急时刻会发挥出极大的作用
+item.skyfeather_amulet.desc=§b含有风神的意识的残留，在危急时刻会发挥出极大的作用
 item.skyfeather_amulet.ready=§a准备就绪
 item.skyfeather_amulet.cooldown=§c神的意识正在重新汇聚
 item.wind_ring.name=苍风戒

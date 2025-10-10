@@ -2,6 +2,7 @@ package com.tsune.ecobaubles.client;
 
 import com.tsune.ecobaubles.network.PacketHandler;
 import com.tsune.ecobaubles.network.message.SPacketUseAbility;
+import com.tsune.ecobaubles.network.message.SPacketTogglePassive;
 import com.tsune.ecobaubles.network.message.SPacketWindCharmJump;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
@@ -13,17 +14,23 @@ import org.lwjgl.input.Keyboard;
 
 public class Keybinds {
     public static KeyBinding abilityKey;
+    public static KeyBinding togglePassiveKey;
     private static boolean jumpKeyPressed = false;
 
     public static void register() {
         abilityKey = new KeyBinding("key.ecobaubles.ability", Keyboard.KEY_G, "key.categories.ecobaubles");
+        togglePassiveKey = new KeyBinding("key.ecobaubles.toggle_passive", Keyboard.KEY_R, "key.categories.ecobaubles");
         ClientRegistry.registerKeyBinding(abilityKey);
+        ClientRegistry.registerKeyBinding(togglePassiveKey);
     }
 
     @SubscribeEvent
     public void onKeyInput(InputEvent.KeyInputEvent event) {
         if (abilityKey.isPressed()) {
             PacketHandler.INSTANCE.sendToServer(new SPacketUseAbility());
+        }
+        if (togglePassiveKey.isPressed()) {
+            PacketHandler.INSTANCE.sendToServer(new SPacketTogglePassive());
         }
     }
     

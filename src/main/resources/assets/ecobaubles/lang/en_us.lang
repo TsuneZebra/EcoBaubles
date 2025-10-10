@@ -1,3 +1,10 @@
+key.ecobaubles.toggle_passive=Toggle Passive
+item.flame_demon_eye.name=Flame Demon Eye
+item.flame_demon_eye.desc=Flame Demon Eye: More missing HP grants more damage and speed; triggers Undying (7s, 300s cd) at lethal; toggle "Play with Fire"
+item.flame_demon_eye.toggle_on=Play with Fire: ON (+50%% damage, take 35%% self-damage)
+item.flame_demon_eye.toggle_off=Play with Fire: OFF
+item.flame_demon_eye.cooldown=§aUndying on cooldown
+item.flame_demon_eye.ready=§aUndying ready
 item.skyfeather_amulet.name=Skyfeather Amulet
 item.skyfeather_amulet.desc=§bContains remnants of the Wind God's consciousness, providing great power in times of crisis
 item.skyfeather_amulet.ready=§aReady
