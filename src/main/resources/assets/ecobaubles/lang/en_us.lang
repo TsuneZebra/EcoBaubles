@@ -47,4 +47,44 @@ item.wind_spirit.wind_crown_boost=§7Wind Crown: Max health shield becomes 75%%
 item.wind_spirit.wind_shield_echo_boost=§7Wind Shield Echo: Damage dealt becomes 16 points
 item.wind_spirit.wind_charm_boost=§7Wind Charm: Each jump height increment changes from 1 block to 2 blocks
 
+item.flame_demon_core.name=Flame Demon Core
+item.flame_demon_core.desc=§7Fire resistance; attacks ignite targets (5s burn, 1%% max HP/s, 30s cd/target); +20%% speed in lava and on soul sand
+
+item.explosion_ring.name=Explosion Ring
+item.explosion_ring.desc=§7[G] Ignite self, explode after 3s: 80%% max HP true dmg to self, 180%% to nearby enemies (4 block radius, 180s cd)
+item.explosion_ring.armed=§cFUSE LIT — Detonating in 3s!
+item.explosion_ring.cooldown=§cExplosion on cooldown
+item.explosion_ring.ready=§aExplosion ready
+
+item.ash_ring.name=Ash Ring
+item.ash_ring.desc=§7Below 50%% HP: deal fire damage equal to 100%% of your missing HP to nearby enemies (30s cd)
+
+item.soul_burn_ring.name=Soul Burn Ring
+item.soul_burn_ring.desc=§7When attacked: fire chain links to attacker, draining 3%% current HP (max 5) every 2s (heals you; overflow→absorption shield); attacker cannot heal; 14s duration, breaks beyond 20 blocks (90s cd/target)
+
+item.lava_heart_belt.name=Lava Heart Belt
+item.lava_heart_belt.desc=§7+25%% max HP; while in lava: regen 1 HP/s + Resistance I (expires immediately on leaving lava)
+
+item.ember_mask.name=Ember Mask
+item.ember_mask.desc=§7Night vision; stare at a hostile mob 6s to ignite it (10s); stare at a burning mob 5s to instantly deal all remaining burn damage (1 dmg/s remaining) and extinguish it
+
+item.fervent_cloak.name=Fervent Cloak
+item.fervent_cloak.desc=§7Aura: nearby enemies burn (1 fire dmg/s, -10%% healing); on kill: small explosion dealing 10 dmg to nearby enemies (30s cd)
+
+item.explosion_pendant.name=Explosion Pendant
+item.explosion_pendant.desc=§7When a single hit exceeds 55%% of a mob's max HP, trigger a small explosion igniting nearby mobs and dealing 7 damage
+
+item.fire_spirit.name=Fire Spirit
+item.fire_spirit.desc=§bContains indescribable fire power; you can feel every faint ember from all directions
+item.fire_spirit.effect_title=§6Fire Spirit Enhancement Effects:
+item.fire_spirit.flame_demon_eye_boost=§7Flame Demon Eye: Berserker max bonus +15%% (atk 50%%→65%%, spd 20%%→28%%), Undying +3s (7s→10s)
+item.fire_spirit.flame_demon_core_boost=§7Flame Demon Core: Burn duration +3s (5s→8s), ignite cooldown halved (30s→15s)
+item.fire_spirit.explosion_ring_boost=§7Explosion Ring: Cooldown -60s (180s→120s), self-damage ratio 80%%→60%%
+item.fire_spirit.ash_ring_boost=§7Ash Ring: Trigger threshold 50%%→65%%, damage multiplier 100%%→130%% of missing HP
+item.fire_spirit.soul_burn_ring_boost=§7Soul Burn Ring: Chain duration +6s (14s→20s), drain cap 5→8
+item.fire_spirit.lava_heart_belt_boost=§7Lava Heart Belt: Max HP bonus 25%%→40%%, lava regen 1→2 HP/s
+item.fire_spirit.ember_mask_boost=§7Ember Mask: Ignite stare 6s→4s, burn detonation stare 5s→3s
+item.fire_spirit.fervent_cloak_boost=§7Fervent Cloak: Aura range +1 block (2→3), kill explosion dmg 10→15, cooldown 30s→20s
+item.fire_spirit.explosion_pendant_boost=§7Explosion Pendant: Trigger threshold 55%%→40%%, explosion damage 7→12
+
 itemGroup.ecobaubles=EcoBaubles
