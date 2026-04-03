@@ -5,9 +5,12 @@ import com.tsune.ecobaubles.capability.PlayerCooldown;
 import com.tsune.ecobaubles.capability.PlayerCooldownStorage;
 import com.tsune.ecobaubles.client.Keybinds;
 import com.tsune.ecobaubles.client.renderer.RenderWindArrow;
+import com.tsune.ecobaubles.client.renderer.RenderWaterOrb;
 import com.tsune.ecobaubles.entity.EntityWindArrow;
+import com.tsune.ecobaubles.entity.EntityWaterOrb;
 import com.tsune.ecobaubles.events.CapabilityHandler;
 import com.tsune.ecobaubles.events.ForgeEventHandler;
+import com.tsune.ecobaubles.events.water.WaterEventHandler;
 import com.tsune.ecobaubles.network.PacketHandler;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
@@ -40,6 +43,7 @@ public class EcoBaubles {
         logger = event.getModLog();
         MinecraftForge.EVENT_BUS.register(new ForgeEventHandler());
         MinecraftForge.EVENT_BUS.register(new FireEventHandler());
+        MinecraftForge.EVENT_BUS.register(new WaterEventHandler());
         MinecraftForge.EVENT_BUS.register(new CapabilityHandler());
         CapabilityManager.INSTANCE.register(IPlayerCooldown.class, new PlayerCooldownStorage(), PlayerCooldown::new);
         
@@ -47,6 +51,7 @@ public class EcoBaubles {
 
         // Register entity
         EntityRegistry.registerModEntity(new ResourceLocation(MODID, "wind_arrow"), EntityWindArrow.class, "wind_arrow", entityId++, this, 64, 1, true);
+        EntityRegistry.registerModEntity(new ResourceLocation(MODID, "water_orb"), EntityWaterOrb.class, "water_orb", entityId++, this, 64, 1, true);
     }
 
     @Mod.EventHandler
@@ -55,7 +60,8 @@ public class EcoBaubles {
         Keybinds.register();
         MinecraftForge.EVENT_BUS.register(new Keybinds());
         
-        // Register entity renderer
+        // Register entity renderers
         RenderingRegistry.registerEntityRenderingHandler(EntityWindArrow.class, new RenderWindArrow.Factory());
+        RenderingRegistry.registerEntityRenderingHandler(EntityWaterOrb.class, new RenderWaterOrb.Factory());
     }
 }

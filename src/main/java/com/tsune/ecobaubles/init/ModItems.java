@@ -20,6 +20,17 @@ import com.tsune.ecobaubles.items.ItemWindCrown;
 import com.tsune.ecobaubles.items.ItemWindShieldEcho;
 import com.tsune.ecobaubles.items.ItemWindCharm;
 import com.tsune.ecobaubles.items.ItemWindSpirit;
+// Water items
+import com.tsune.ecobaubles.items.ItemAmuletSeaGod;
+import com.tsune.ecobaubles.items.ItemAmuletTideSurge;
+import com.tsune.ecobaubles.items.ItemRingHealing;
+import com.tsune.ecobaubles.items.ItemRingTorrent;
+import com.tsune.ecobaubles.items.ItemRingWave;
+import com.tsune.ecobaubles.items.ItemHelmetAbyss;
+import com.tsune.ecobaubles.items.ItemBeltTidal;
+import com.tsune.ecobaubles.items.ItemBodyWaterRobe;
+import com.tsune.ecobaubles.items.ItemCharmWaterHeart;
+import com.tsune.ecobaubles.items.ItemWaterSpirit;
 import net.minecraft.item.Item;
 
 import java.util.ArrayList;
@@ -51,4 +62,16 @@ public class ModItems {
     public static final Item FERVENT_CLOAK = new ItemBodyFerventCloak("fervent_cloak");
     public static final Item EXPLOSION_PENDANT = new ItemCharmExplosionPendant("explosion_pendant");
     public static final Item FIRE_SPIRIT = new ItemFireSpirit("fire_spirit");
+
+    // Water items
+    public static final Item SEA_GOD_AMULET      = new ItemAmuletSeaGod("sea_god_amulet");
+    public static final Item TIDE_SURGE_AMULET   = new ItemAmuletTideSurge("tide_surge_amulet");
+    public static final Item HEALING_RING        = new ItemRingHealing("healing_ring");
+    public static final Item TORRENT_RING        = new ItemRingTorrent("torrent_ring");
+    public static final Item WAVE_RING           = new ItemRingWave("wave_ring");
+    public static final Item ABYSS_HELMET        = new ItemHelmetAbyss("abyss_helmet");
+    public static final Item TIDAL_BELT          = new ItemBeltTidal("tidal_belt");
+    public static final Item WATER_ROBE          = new ItemBodyWaterRobe("water_robe");
+    public static final Item WATER_HEART_PENDANT = new ItemCharmWaterHeart("water_heart_pendant");
+    public static final Item WATER_SPIRIT        = new ItemWaterSpirit("water_spirit");
 }
