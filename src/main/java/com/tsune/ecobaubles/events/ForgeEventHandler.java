@@ -37,9 +37,14 @@ import net.minecraftforge.fml.common.gameevent.InputEvent;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 
+import net.minecraftforge.event.entity.ProjectileImpactEvent;
+import net.minecraft.util.math.MathHelper;
+
 import java.util.List;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class ForgeEventHandler {
 
@@ -53,6 +58,19 @@ public class ForgeEventHandler {
     private static final double ATTRACTION_RANGE = 8.0D;
     private static final double ATTRACTION_FORCE = 0.1D; // Reduced force for continuous effect
     
+    // Wind Ring - Buff state (instant draw + 30% speed + piercing)
+    private static final Map<UUID, Long> windRingBuffExpiry = new HashMap<>();
+    // arrow UUID -> set of entity UUIDs already hit (for piercing)
+    private static final Map<UUID, Set<UUID>> windPiercingArrows = new HashMap<>();
+
+    public static void activateWindRingBuff(EntityPlayer player, long expiryTick) {
+        // 风灵增强: buff duration 5s→7s
+        long actualExpiry = hasWindSpirit(player)
+                ? player.world.getTotalWorldTime() + 7 * 20
+                : expiryTick;
+        windRingBuffExpiry.put(player.getUniqueID(), actualExpiry);
+    }
+
     // Crack Wind Ring - Bow speed and arrow effects
     private static final UUID CRACK_WIND_BOW_SPEED_UUID = UUID.fromString("12345678-1234-1234-1234-123456789012");
     private static final double BOW_SPEED_BONUS = 0.20; // 20% faster bow speed
@@ -546,18 +564,75 @@ public class ForgeEventHandler {
      */
     @SubscribeEvent
     public void onArrowSpawn(EntityJoinWorldEvent event) {
-        if (event.getEntity() instanceof EntityArrow) {
-            EntityArrow arrow = (EntityArrow) event.getEntity();
-            if (arrow.shootingEntity instanceof EntityPlayer) {
-                EntityPlayer shooter = (EntityPlayer) arrow.shootingEntity;
-                if (hasCrackWindRing(shooter)) {
-                    // Boost arrow speed by 20%
-                    arrow.motionX *= (1.0 + ARROW_SPEED_BONUS);
-                    arrow.motionY *= (1.0 + ARROW_SPEED_BONUS);
-                    arrow.motionZ *= (1.0 + ARROW_SPEED_BONUS);
-                }
+        if (!(event.getEntity() instanceof EntityArrow)) return;
+        EntityArrow arrow = (EntityArrow) event.getEntity();
+        if (!(arrow.shootingEntity instanceof EntityPlayer)) return;
+        EntityPlayer shooter = (EntityPlayer) arrow.shootingEntity;
+
+        // ── 苍风戒: buff active → instant draw + 30% speed + piercing ──────────
+        UUID pid = shooter.getUniqueID();
+        Long buffExpiry = windRingBuffExpiry.get(pid);
+        if (buffExpiry != null && shooter.world.getTotalWorldTime() <= buffExpiry) {
+            // Normalize to full draw speed (3.0) then apply +30%
+            double speed = Math.sqrt(arrow.motionX * arrow.motionX + arrow.motionY * arrow.motionY + arrow.motionZ * arrow.motionZ);
+            if (speed > 1e-6) {
+                double scale = 3.9 / speed; // 3.0 * 1.3
+                arrow.motionX *= scale;
+                arrow.motionY *= scale;
+                arrow.motionZ *= scale;
             }
+            arrow.setIsCritical(true);
+            windPiercingArrows.put(arrow.getUniqueID(), new HashSet<>());
         }
+
+        // ── 裂风戒: arrow speed +20% ──────────────────────────────────────────
+        if (hasCrackWindRing(shooter)) {
+            arrow.motionX *= (1.0 + ARROW_SPEED_BONUS);
+            arrow.motionY *= (1.0 + ARROW_SPEED_BONUS);
+            arrow.motionZ *= (1.0 + ARROW_SPEED_BONUS);
+        }
+    }
+
+    @SubscribeEvent
+    public void onProjectileImpact(ProjectileImpactEvent event) {
+        if (!(event.getEntity() instanceof EntityArrow)) return;
+        EntityArrow arrow = (EntityArrow) event.getEntity();
+        Set<UUID> hitEntities = windPiercingArrows.get(arrow.getUniqueID());
+        if (hitEntities == null) return;
+
+        RayTraceResult result = event.getRayTraceResult();
+        if (result.typeOfHit != RayTraceResult.Type.ENTITY) {
+            // Hit a block: let arrow die normally, clean up tracking
+            windPiercingArrows.remove(arrow.getUniqueID());
+            return;
+        }
+        if (!(result.entityHit instanceof EntityLivingBase)) {
+            // Non-living entity: just skip
+            event.setCanceled(true);
+            return;
+        }
+
+        EntityLivingBase target = (EntityLivingBase) result.entityHit;
+        UUID tid = target.getUniqueID();
+
+        if (hitEntities.contains(tid)) {
+            // Already hit this entity with this arrow, skip
+            event.setCanceled(true);
+            return;
+        }
+        hitEntities.add(tid);
+
+        // Deal damage manually, mirroring EntityArrow.onHit logic
+        double spd = Math.sqrt(arrow.motionX * arrow.motionX + arrow.motionY * arrow.motionY + arrow.motionZ * arrow.motionZ);
+        int dmg = MathHelper.ceil(spd * arrow.getDamage());
+        if (arrow.getIsCritical()) {
+            dmg += arrow.world.rand.nextInt(dmg / 2 + 2);
+        }
+        Entity shooterEntity = arrow.shootingEntity != null ? arrow.shootingEntity : arrow;
+        target.attackEntityFrom(DamageSource.causeArrowDamage(arrow, shooterEntity), (float) dmg);
+
+        // Cancel so the arrow keeps flying (does not die)
+        event.setCanceled(true);
     }
     
     /**
