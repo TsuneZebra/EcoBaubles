@@ -88,7 +88,7 @@ item.fire_spirit.fervent_cloak_boost=§7Fervent Cloak: Aura range +1 block (2→
 item.fire_spirit.explosion_pendant_boost=§7Explosion Pendant: Trigger threshold 55%%→40%%, explosion damage 7→12
 
 item.sea_god_amulet.name=Sea God's Blessing
-item.sea_god_amulet.desc=§780%% damage reduction; Regeneration I; in water: +20%% speed, Regen II; triggers full HP heal + Absorption III (15s, 300s cd) for self and nearby players when any drops below 50%%
+item.sea_god_amulet.desc=§720%% damage reduction; Regeneration I; in water: +20%% speed, Regen II; triggers full HP heal + Absorption III (15s, 300s cd) for self and nearby players when any drops below 50%%
 item.tide_surge_amulet.name=Tide Surge Amulet
 item.tide_surge_amulet.desc=§7Out of combat 15s: gain shield = 20%% max HP; in water: +20%% speed, -20%% damage taken
 item.healing_ring.name=Healing Ring

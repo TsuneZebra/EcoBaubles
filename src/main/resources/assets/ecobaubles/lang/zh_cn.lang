@@ -88,7 +88,7 @@ item.fire_spirit.fervent_cloak_boost=§7狂热披风：光环范围+1格（2→3
 item.fire_spirit.explosion_pendant_boost=§7爆炎吊坠：触发阈值55%%→40%%，爆炸伤害7→12
 
 item.sea_god_amulet.name=海神恩赐
-item.sea_god_amulet.desc=§7受到的伤害降低80%%；获得生命恢复1；在水中：移速+20%%，生命恢复2；当自身或周围玩家（8格）血量低于50%%时立即恢复全部血量并获得15s吸收3（冷却300s）
+item.sea_god_amulet.desc=§7受到的伤害降低20%%；获得生命恢复1；在水中：移速+20%%，生命恢复2；当自身或周围玩家（8格）血量低于50%%时立即恢复全部血量并获得15s吸收3（冷却300s）
 item.tide_surge_amulet.name=潮涌护符
 item.tide_surge_amulet.desc=§7脱离战斗15s后获得最大生命值20%%的护盾；在水下：移速+20%%，受到伤害-20%%
 item.healing_ring.name=疗愈指环

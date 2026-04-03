@@ -124,11 +124,11 @@ public class WaterEventHandler {
         EntityLivingBase victim = event.getEntityLiving();
         DamageSource src = event.getSource();
 
-        // ── SeaGod: 80% damage reduction ─────────────────────────────────────
+        // ── SeaGod: 20% damage reduction ─────────────────────────────────────
         if (victim instanceof EntityPlayer) {
             EntityPlayer vp = (EntityPlayer) victim;
             if (hasBauble(vp, ModItems.SEA_GOD_AMULET)) {
-                event.setAmount(event.getAmount() * 0.20f);
+                event.setAmount(event.getAmount() * 0.80f);
             }
         }
 
