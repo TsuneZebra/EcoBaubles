@@ -24,6 +24,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.logging.log4j.Logger;
 import com.tsune.ecobaubles.events.fire.FireEventHandler;
+import com.tsune.ecobaubles.events.ice.IceEventHandler;
 
 @Mod(modid = EcoBaubles.MODID, name = EcoBaubles.NAME, version = EcoBaubles.VERSION, dependencies = "required-after:baubles@[1.5.2,)")
 public class EcoBaubles {
@@ -44,6 +45,7 @@ public class EcoBaubles {
         MinecraftForge.EVENT_BUS.register(new ForgeEventHandler());
         MinecraftForge.EVENT_BUS.register(new FireEventHandler());
         MinecraftForge.EVENT_BUS.register(new WaterEventHandler());
+        MinecraftForge.EVENT_BUS.register(new IceEventHandler());
         MinecraftForge.EVENT_BUS.register(new CapabilityHandler());
         CapabilityManager.INSTANCE.register(IPlayerCooldown.class, new PlayerCooldownStorage(), PlayerCooldown::new);
         

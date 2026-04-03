@@ -31,6 +31,17 @@ import com.tsune.ecobaubles.items.ItemBeltTidal;
 import com.tsune.ecobaubles.items.ItemBodyWaterRobe;
 import com.tsune.ecobaubles.items.ItemCharmWaterHeart;
 import com.tsune.ecobaubles.items.ItemWaterSpirit;
+// Ice items
+import com.tsune.ecobaubles.items.ItemAmuletIceGod;
+import com.tsune.ecobaubles.items.ItemAmuletFrostErosion;
+import com.tsune.ecobaubles.items.ItemRingFrostBlade;
+import com.tsune.ecobaubles.items.ItemRingIcePrison;
+import com.tsune.ecobaubles.items.ItemRingFrostGrudge;
+import com.tsune.ecobaubles.items.ItemBeltFrostDomain;
+import com.tsune.ecobaubles.items.ItemHelmetIceSoulCrown;
+import com.tsune.ecobaubles.items.ItemBodyIceArmor;
+import com.tsune.ecobaubles.items.ItemCharmIcyHeart;
+import com.tsune.ecobaubles.items.ItemIceSpirit;
 import net.minecraft.item.Item;
 
 import java.util.ArrayList;
@@ -74,4 +85,16 @@ public class ModItems {
     public static final Item WATER_ROBE          = new ItemBodyWaterRobe("water_robe");
     public static final Item WATER_HEART_PENDANT = new ItemCharmWaterHeart("water_heart_pendant");
     public static final Item WATER_SPIRIT        = new ItemWaterSpirit("water_spirit");
+
+    // Ice items
+    public static final Item ICE_GOD_AMULET       = new ItemAmuletIceGod("ice_god_amulet");
+    public static final Item FROST_EROSION_AMULET = new ItemAmuletFrostErosion("frost_erosion_amulet");
+    public static final Item FROST_BLADE_RING     = new ItemRingFrostBlade("frost_blade_ring");
+    public static final Item ICE_PRISON_RING      = new ItemRingIcePrison("ice_prison_ring");
+    public static final Item FROST_GRUDGE_RING    = new ItemRingFrostGrudge("frost_grudge_ring");
+    public static final Item FROST_DOMAIN_BELT    = new ItemBeltFrostDomain("frost_domain_belt");
+    public static final Item ICE_SOUL_CROWN       = new ItemHelmetIceSoulCrown("ice_soul_crown");
+    public static final Item ICE_ARMOR_BODY       = new ItemBodyIceArmor("ice_armor_body");
+    public static final Item ICY_HEART_PENDANT    = new ItemCharmIcyHeart("icy_heart_pendant");
+    public static final Item ICE_SPIRIT           = new ItemIceSpirit("ice_spirit");
 }
