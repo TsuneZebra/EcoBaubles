@@ -424,22 +424,6 @@ public class WaterEventHandler {
                     "abyssDepth", 0.0, 1, false);
         }
 
-        // ── WaterHeartPendant: regen overflow → absorption (vanilla regen skips ────
-        //    heal() when at full HP, so we intercept here instead)
-        if (hasPendant && player.getHealth() >= player.getMaxHealth()) {
-            net.minecraft.potion.PotionEffect regenEffect = player.getActivePotionEffect(MobEffects.REGENERATION);
-            if (regenEffect != null) {
-                int interval = Math.max(1, 50 >> regenEffect.getAmplifier());
-                if (regenEffect.getDuration() % interval == 0) {
-                    float cap = player.getMaxHealth() * (ws ? 0.40f : 0.30f);
-                    float current = player.getAbsorptionAmount();
-                    if (current < cap) {
-                        player.setAbsorptionAmount(Math.min(current + 1.0f, cap));
-                    }
-                }
-            }
-        }
-
         // ── WaterRobe: share regen when HP > 90% ─────────────────────────────
         float robeThreshold = ws ? 0.80f : 0.90f; // 水灵: 80%
         if (hasWaterRobe && player.getHealth() >= player.getMaxHealth() * robeThreshold) {

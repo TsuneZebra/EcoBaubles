@@ -107,7 +107,7 @@ item.tidal_belt.desc=§7On negative effect: heal 4 HP, reduce duration 40%%; on 
 item.water_robe.name=Water Robe
 item.water_robe.desc=§7Projectile damage -35%%; above 90%% HP: grant Regeneration I to nearby players (5 blocks); on melee hit: freeze attacker for 1s
 item.water_heart_pendant.name=Water Heart Pendant
-item.water_heart_pendant.desc=§7When at full HP, healing received converts to absorption (cap: 30%% max HP); this also applies to healing you provide to nearby players
+item.water_heart_pendant.desc=§7When at full HP, magic healing (baubles, instant health potions, etc.) converts to absorption (cap: 30%% max HP); also applies to healing you provide to nearby players
 
 item.water_spirit.name=Water Spirit
 item.water_spirit.desc=§bContains indescribable water power; you can feel every subtle current from all directions

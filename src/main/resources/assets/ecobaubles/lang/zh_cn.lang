@@ -107,7 +107,7 @@ item.tidal_belt.desc=§7受到负面效果时：恢复4点生命，持续时间-
 item.water_robe.name=水纹长袍
 item.water_robe.desc=§7投掷物伤害降低35%%；自身血量高于90%%时为周围5格玩家提供生命恢复1；受到近战伤害时使攻击者溺水并无法移动1s
 item.water_heart_pendant.name=水心圣坠
-item.water_heart_pendant.desc=§7生命值满时，受到的治疗转化为伤害吸收（上限为最大生命值30%%）；自身对周围玩家的治疗效果同样适用此转化
+item.water_heart_pendant.desc=§7生命值满时，受到的魔法治疗（饰品治疗、瞬间恢复药水等）转化为伤害吸收（上限30%%最大生命值）；自身对周围玩家的治疗效果同样适用
 
 item.water_spirit.name=水灵
 item.water_spirit.desc=§b蕴含着不可描述的水的力量，你能感受到来自四面八方的每一丝微弱的水流
