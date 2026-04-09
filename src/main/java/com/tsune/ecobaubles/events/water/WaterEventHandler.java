@@ -3,6 +3,7 @@ package com.tsune.ecobaubles.events.water;
 import baubles.api.BaublesApi;
 import baubles.api.cap.IBaublesItemHandler;
 import com.tsune.ecobaubles.init.ModItems;
+import com.tsune.ecobaubles.items.ItemRingSpringShield;
 import net.minecraft.block.material.Material;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLiving;
@@ -51,6 +52,22 @@ public class WaterEventHandler {
     private static final Map<UUID, Long> waterDrownTick = new HashMap<>();
     // locked position: entity UUID → [x, y, z]
     private static final Map<UUID, double[]> lockedPositions = new HashMap<>();
+
+    // ── SpringShieldRing (泉御之戒) ───────────────────────────────────────────
+    private static final Map<UUID, Long>  springShieldExpiry     = new HashMap<>(); // when immunity ends
+    private static final Map<UUID, Float> springShieldStored     = new HashMap<>(); // damage absorbed
+    private static final Map<UUID, Long>  springRepayStart       = new HashMap<>(); // when repayment started
+    private static final Map<UUID, Float> springRepayTotal       = new HashMap<>(); // total to repay
+    private static final Map<UUID, Long>  springRepayLastTick    = new HashMap<>(); // last repay tick
+
+    public static void activateSpringShield(EntityPlayer player, long expiryTick) {
+        UUID pid = player.getUniqueID();
+        springShieldExpiry.put(pid, expiryTick);
+        springShieldStored.put(pid, 0.0f);
+        springRepayStart.remove(pid);
+        springRepayTotal.remove(pid);
+        springRepayLastTick.remove(pid);
+    }
 
     // ── WaveRing (波光指环) ────────────────────────────────────────────────────
     private static final Map<UUID, Long> waveRingLastProc = new HashMap<>();
@@ -123,6 +140,22 @@ public class WaterEventHandler {
     public void onLivingHurt(LivingHurtEvent event) {
         EntityLivingBase victim = event.getEntityLiving();
         DamageSource src = event.getSource();
+
+        // ── SpringShieldRing: absorb all damage during immunity window ────────
+        if (victim instanceof EntityPlayer) {
+            EntityPlayer vp = (EntityPlayer) victim;
+            if (hasBauble(vp, ModItems.SPRING_SHIELD_RING)) {
+                UUID vid = vp.getUniqueID();
+                Long shieldExpiry = springShieldExpiry.get(vid);
+                long nowHurt = vp.world.getTotalWorldTime();
+                if (shieldExpiry != null && nowHurt <= shieldExpiry) {
+                    float stored = springShieldStored.getOrDefault(vid, 0.0f);
+                    springShieldStored.put(vid, stored + event.getAmount());
+                    event.setCanceled(true);
+                    return;
+                }
+            }
+        }
 
         // ── SeaGod: 20% damage reduction ─────────────────────────────────────
         if (victim instanceof EntityPlayer) {
@@ -242,6 +275,47 @@ public class WaterEventHandler {
         if (player.world.isRemote) return;
         long now = player.world.getTotalWorldTime();
         UUID pid = player.getUniqueID();
+
+        // ── SpringShieldRing: transition to repayment, then tick damage ────────
+        if (hasBauble(player, ModItems.SPRING_SHIELD_RING)) {
+            Long shieldExpiry = springShieldExpiry.get(pid);
+            // Shield just expired → start repayment
+            if (shieldExpiry != null && now > shieldExpiry && !springRepayStart.containsKey(pid)) {
+                float total = springShieldStored.getOrDefault(pid, 0.0f);
+                if (total > 0.0f) {
+                    springRepayStart.put(pid, now);
+                    springRepayTotal.put(pid, total);
+                    springRepayLastTick.put(pid, now);
+                }
+                springShieldExpiry.remove(pid);
+                springShieldStored.remove(pid);
+            }
+            // Repayment: deal stored/15 every second (20 ticks)
+            Long repayStart = springRepayStart.get(pid);
+            if (repayStart != null) {
+                long elapsed = now - repayStart;
+                int repayDuration = ItemRingSpringShield.REPAY_SECONDS * 20;
+                if (elapsed >= repayDuration) {
+                    springRepayStart.remove(pid);
+                    springRepayTotal.remove(pid);
+                    springRepayLastTick.remove(pid);
+                } else {
+                    Long lastTick = springRepayLastTick.get(pid);
+                    if (lastTick != null && now - lastTick >= 20) {
+                        float perSecond = springRepayTotal.getOrDefault(pid, 0.0f) / ItemRingSpringShield.REPAY_SECONDS;
+                        player.attackEntityFrom(net.minecraft.util.DamageSource.MAGIC, perSecond);
+                        springRepayLastTick.put(pid, now);
+                    }
+                }
+            }
+        } else {
+            // Bauble removed mid-shield or mid-repayment: clear state
+            springShieldExpiry.remove(pid);
+            springShieldStored.remove(pid);
+            springRepayStart.remove(pid);
+            springRepayTotal.remove(pid);
+            springRepayLastTick.remove(pid);
+        }
 
         boolean hasSeaGod    = hasBauble(player, ModItems.SEA_GOD_AMULET);
         boolean hasTideSurge = hasBauble(player, ModItems.TIDE_SURGE_AMULET);

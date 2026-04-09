@@ -24,7 +24,7 @@ import com.tsune.ecobaubles.items.ItemWindSpirit;
 import com.tsune.ecobaubles.items.ItemAmuletSeaGod;
 import com.tsune.ecobaubles.items.ItemAmuletTideSurge;
 import com.tsune.ecobaubles.items.ItemRingHealing;
-import com.tsune.ecobaubles.items.ItemRingTorrent;
+import com.tsune.ecobaubles.items.ItemRingSpringShield;
 import com.tsune.ecobaubles.items.ItemRingWave;
 import com.tsune.ecobaubles.items.ItemHelmetAbyss;
 import com.tsune.ecobaubles.items.ItemBeltTidal;
@@ -89,7 +89,7 @@ public class ModItems {
     public static final Item SEA_GOD_AMULET      = new ItemAmuletSeaGod("sea_god_amulet");
     public static final Item TIDE_SURGE_AMULET   = new ItemAmuletTideSurge("tide_surge_amulet");
     public static final Item HEALING_RING        = new ItemRingHealing("healing_ring");
-    public static final Item TORRENT_RING        = new ItemRingTorrent("torrent_ring");
+    public static final Item SPRING_SHIELD_RING  = new ItemRingSpringShield("spring_shield_ring");
     public static final Item WAVE_RING           = new ItemRingWave("wave_ring");
     public static final Item ABYSS_HELMET        = new ItemHelmetAbyss("abyss_helmet");
     public static final Item TIDAL_BELT          = new ItemBeltTidal("tidal_belt");

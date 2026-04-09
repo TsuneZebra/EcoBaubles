@@ -51,7 +51,7 @@ public class ItemWaterSpirit extends Item implements IBauble {
         tooltip.add(I18n.format("item.water_spirit.sea_god_boost"));
         tooltip.add(I18n.format("item.water_spirit.tide_surge_boost"));
         tooltip.add(I18n.format("item.water_spirit.healing_ring_boost"));
-        tooltip.add(I18n.format("item.water_spirit.torrent_ring_boost"));
+        tooltip.add(I18n.format("item.water_spirit.spring_shield_ring_boost"));
         tooltip.add(I18n.format("item.water_spirit.wave_ring_boost"));
         tooltip.add(I18n.format("item.water_spirit.abyss_helmet_boost"));
         tooltip.add(I18n.format("item.water_spirit.tidal_belt_boost"));
