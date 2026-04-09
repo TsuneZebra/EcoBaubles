@@ -22,6 +22,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
+import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.living.PotionEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
@@ -35,6 +36,7 @@ public class WaterEventHandler {
     private static final UUID SEA_GOD_SPEED_UUID = UUID.fromString("a0b1c2d3-0001-4000-8000-000000000001");
     private static final UUID TIDE_SPEED_UUID    = UUID.fromString("a0b1c2d3-0002-4000-8000-000000000002");
     private static final UUID ABYSS_DAMAGE_UUID  = UUID.fromString("a0b1c2d3-0003-4000-8000-000000000003");
+    private static final UUID ABYSS_HEALTH_UUID  = UUID.fromString("a0b1c2d3-0004-4000-8000-000000000004");
 
     // ── SeaGod amulet ─────────────────────────────────────────────────────────
     private static final Map<UUID, Long> seaGodHealCD = new HashMap<>();
@@ -43,8 +45,8 @@ public class WaterEventHandler {
     private static final Map<UUID, Long> lastCombatTick = new HashMap<>();
     private static final Set<UUID> hasTideShield = new HashSet<>();
 
-    // ── HealingRing ───────────────────────────────────────────────────────────
-    private static final Map<UUID, Long> healingRingLastTick = new HashMap<>();
+    // ── WaterRobe (水纹长袍) counter-attack ───────────────────────────────────
+    private static final Map<UUID, Long> waterRobeCounterCD = new HashMap<>();
 
     // ── TorrentRing (激流勇进) ─────────────────────────────────────────────────
     private static final Map<UUID, Long> waterLockMap = new HashMap<>();
@@ -74,9 +76,6 @@ public class WaterEventHandler {
 
     // ── TidalBelt (潮汐腰带) ──────────────────────────────────────────────────
     private static boolean tidalBeltProcessing = false;
-
-    // ── WaterHeartPendant (水心圣坠) ──────────────────────────────────────────
-    private static final Map<UUID, Long> waterHeartCD = new HashMap<>();
 
     // ─────────────────────────────────────────────────────────────────────────
     // Helpers
@@ -177,12 +176,48 @@ public class WaterEventHandler {
             }
         }
 
-        // ── WaterRobe: projectile -35% (-50% with 水灵) ───────────────────────
-        if (victim instanceof EntityPlayer && src.isProjectile()) {
+        // ── WaterRobe: projectile -35% (-50% with 水灵); melee counter ────────
+        if (victim instanceof EntityPlayer) {
             EntityPlayer vp = (EntityPlayer) victim;
             if (hasBauble(vp, ModItems.WATER_ROBE)) {
                 boolean wsVp = hasWaterSpirit(vp);
-                event.setAmount(event.getAmount() * (wsVp ? 0.50f : 0.65f));
+                if (src.isProjectile()) {
+                    event.setAmount(event.getAmount() * (wsVp ? 0.50f : 0.65f));
+                } else if (!src.isMagicDamage() && !src.isFireDamage() && !src.isExplosion()
+                        && src.getTrueSource() instanceof EntityLivingBase) {
+                    // Melee counter: freeze attacker for 1s
+                    EntityLivingBase attacker = (EntityLivingBase) src.getTrueSource();
+                    long now = vp.world.getTotalWorldTime();
+                    Long lastCounter = waterRobeCounterCD.get(vp.getUniqueID());
+                    if (lastCounter == null || now - lastCounter >= 40L) {
+                        waterRobeCounterCD.put(vp.getUniqueID(), now);
+                        attacker.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, 20, 127, false, false));
+                        if (!(attacker instanceof EntityPlayer)) {
+                            waterLockMap.put(attacker.getUniqueID(), now + 20L);
+                            lockedPositions.put(attacker.getUniqueID(), new double[]{attacker.posX, attacker.posY, attacker.posZ});
+                            if (attacker instanceof EntityLiving) {
+                                ((EntityLiving) attacker).setNoAI(true);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── HealingRing: on-hit heal self + nearby 3 blocks for 5% maxHP ──────
+        if (victim instanceof EntityPlayer) {
+            EntityPlayer vp = (EntityPlayer) victim;
+            if (hasBauble(vp, ModItems.HEALING_RING)) {
+                boolean wsVp = hasWaterSpirit(vp);
+                float healPct = wsVp ? 0.08f : 0.05f;
+                double healRange = wsVp ? 4.0 : 3.0;
+                float healAmt = vp.getMaxHealth() * healPct;
+                vp.heal(healAmt);
+                List<EntityPlayer> allies = vp.world.getEntitiesWithinAABB(
+                        EntityPlayer.class, vp.getEntityBoundingBox().grow(healRange));
+                for (EntityPlayer ally : allies) {
+                    if (ally != vp) ally.heal(ally.getMaxHealth() * healPct);
+                }
             }
         }
 
@@ -203,7 +238,7 @@ public class WaterEventHandler {
                 boolean wsA = hasWaterSpirit(attacker);
                 long now = attacker.world.getTotalWorldTime();
                 Long last = waveRingLastProc.get(attacker.getUniqueID());
-                long waveCD = wsA ? 100L : 140L; // 水灵: 5s, 普通: 7s
+                long waveCD = wsA ? 60L : 80L; // 水灵: 3s, 普通: 4s
                 if (last == null || now - last >= waveCD) {
                     waveRingLastProc.put(attacker.getUniqueID(), now);
                     victim.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, 100, 0, false, true));
@@ -229,37 +264,6 @@ public class WaterEventHandler {
             }
         }
 
-        // ── WaterHeartPendant: attack entity with HP < 25% ───────────────────
-        if (trueSource instanceof EntityPlayer && victim != trueSource) {
-            EntityPlayer attacker = (EntityPlayer) trueSource;
-            if (hasBauble(attacker, ModItems.WATER_HEART_PENDANT)) {
-                boolean wsA = hasWaterSpirit(attacker);
-                long now = attacker.world.getTotalWorldTime();
-                Long last = waterHeartCD.get(attacker.getUniqueID());
-                long heartCD = wsA ? 300L : 400L; // 水灵: 15s, 普通: 20s
-                if ((last == null || now - last >= heartCD)
-                        && victim.getHealth() < victim.getMaxHealth() * 0.25f) {
-                    waterHeartCD.put(attacker.getUniqueID(), now);
-                    float missingHp = victim.getMaxHealth() - victim.getHealth();
-                    float dmgRatio = wsA ? 0.35f : 0.25f; // 水灵: 35%
-                    float waveDmg = Math.min(missingHp * dmgRatio, 50.0f);
-                    float healRatio = wsA ? 0.60f : 0.40f; // 水灵: 60%
-                    float totalDmg = 0;
-                    List<EntityLivingBase> targets = attacker.world.getEntitiesWithinAABB(
-                            EntityLivingBase.class, victim.getEntityBoundingBox().grow(3.0));
-                    if (!targets.contains(victim)) targets.add(victim);
-                    Set<UUID> done = new HashSet<>();
-                    for (EntityLivingBase t : targets) {
-                        if (done.contains(t.getUniqueID()) || t == attacker || t instanceof EntityPlayer) continue;
-                        done.add(t.getUniqueID());
-                        t.attackEntityFrom(DamageSource.MAGIC, waveDmg);
-                        t.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, 60, 127, false, false));
-                        totalDmg += waveDmg;
-                    }
-                    attacker.heal(totalDmg * healRatio);
-                }
-            }
-        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -319,7 +323,6 @@ public class WaterEventHandler {
 
         boolean hasSeaGod    = hasBauble(player, ModItems.SEA_GOD_AMULET);
         boolean hasTideSurge = hasBauble(player, ModItems.TIDE_SURGE_AMULET);
-        boolean hasHealing   = hasBauble(player, ModItems.HEALING_RING);
         boolean hasWaterRobe = hasBauble(player, ModItems.WATER_ROBE);
         boolean hasAbyss     = hasBauble(player, ModItems.ABYSS_HELMET);
         boolean ws           = hasWaterSpirit(player); // 水灵增强
@@ -391,26 +394,6 @@ public class WaterEventHandler {
             hasTideShield.remove(pid);
         }
 
-        // ── HealingRing: every 5s heal nearby players ─────────────────────────
-        if (hasHealing) {
-            Long lastHeal = healingRingLastTick.get(pid);
-            if (lastHeal == null || now - lastHeal >= 100L) {
-                healingRingLastTick.put(pid, now);
-                float healPct = ws ? 0.08f : 0.05f; // 水灵: 8%
-                double healRange = ws ? 4.0 : 3.0;  // 水灵: 4格
-                player.heal(player.getMaxHealth() * healPct);
-                List<EntityPlayer> nearby = player.world.getEntitiesWithinAABB(
-                        EntityPlayer.class, player.getEntityBoundingBox().grow(healRange));
-                for (EntityPlayer ally : nearby) {
-                    if (ally != player) {
-                        ally.heal(ally.getMaxHealth() * healPct);
-                    }
-                }
-            }
-        } else {
-            healingRingLastTick.remove(pid);
-        }
-
         // ── AbyssHelmet ───────────────────────────────────────────────────────
         if (hasAbyss) {
             player.addPotionEffect(new PotionEffect(MobEffects.WATER_BREATHING, 40, 0, false, false));
@@ -420,6 +403,9 @@ public class WaterEventHandler {
             if (player.world.isRaining() && !player.isInWater()) {
                 player.addPotionEffect(new PotionEffect(MobEffects.REGENERATION, 60, 1, false, false));
             }
+            // +20% max health (always active)
+            applyOrRemoveModifier(player, SharedMonsterAttributes.MAX_HEALTH, ABYSS_HEALTH_UUID,
+                    "abyssHealth", 0.20, 2, true);
             if (player.isInWater()) {
                 int depth = getWaterDepth(player);
                 double bonusPerLevel = ws ? 0.12 : 0.08; // 水灵: 每4格+12%
@@ -431,6 +417,8 @@ public class WaterEventHandler {
                         "abyssDepth", 0.0, 1, false);
             }
         } else {
+            applyOrRemoveModifier(player, SharedMonsterAttributes.MAX_HEALTH, ABYSS_HEALTH_UUID,
+                    "abyssHealth", 0.20, 2, false);
             applyOrRemoveModifier(player, SharedMonsterAttributes.ATTACK_DAMAGE, ABYSS_DAMAGE_UUID,
                     "abyssDepth", 0.0, 1, false);
         }
@@ -527,6 +515,45 @@ public class WaterEventHandler {
             }
         } finally {
             tidalBeltProcessing = false;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // LivingHealEvent (水心圣坠: overflow healing → absorption)
+    // ─────────────────────────────────────────────────────────────────────────
+    @SubscribeEvent
+    public void onLivingHeal(LivingHealEvent event) {
+        if (!(event.getEntityLiving() instanceof EntityPlayer)) return;
+        EntityPlayer player = (EntityPlayer) event.getEntityLiving();
+        if (player.world.isRemote) return;
+
+        // Only intercept when at full HP
+        if (player.getHealth() < player.getMaxHealth()) return;
+
+        boolean hasPendant = hasBauble(player, ModItems.WATER_HEART_PENDANT);
+        if (!hasPendant) {
+            // Check if a nearby pendant wearer is within 8 blocks (their aura applies)
+            List<EntityPlayer> nearby = player.world.getEntitiesWithinAABB(
+                    EntityPlayer.class, player.getEntityBoundingBox().grow(8.0));
+            boolean nearbyPendant = false;
+            for (EntityPlayer p : nearby) {
+                if (p != player && hasBauble(p, ModItems.WATER_HEART_PENDANT)) {
+                    nearbyPendant = true;
+                    break;
+                }
+            }
+            if (!nearbyPendant) return;
+        }
+
+        boolean ws = hasWaterSpirit(player);
+        float capRatio = ws ? 0.40f : 0.30f; // 水灵: 40%
+        float maxAbsorption = player.getMaxHealth() * capRatio;
+        float current = player.getAbsorptionAmount();
+        float canAdd = maxAbsorption - current;
+        event.setCanceled(true);
+        if (canAdd > 0) {
+            float toAdd = Math.min(event.getAmount(), canAdd);
+            player.setAbsorptionAmount(current + toAdd);
         }
     }
 
