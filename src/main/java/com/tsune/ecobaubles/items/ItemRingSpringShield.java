@@ -74,8 +74,6 @@ public class ItemRingSpringShield extends Item implements IBauble, IActiveAbilit
         if (worldIn != null) {
             NBTTagCompound nbt = stack.getTagCompound();
             long lastUsed = nbt != null ? nbt.getLong(TAG_COOLDOWN_TICK) : 0L;
-            boolean ws = WaterEventHandler.hasWaterSpirit(worldIn instanceof net.minecraft.world.WorldServer
-                    ? null : null); // client-side only shows static CD
             long cd = COOLDOWN_TICKS;
             long remain = (lastUsed + cd) - worldIn.getTotalWorldTime();
             if (remain > 0) {
