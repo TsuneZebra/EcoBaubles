@@ -19,12 +19,7 @@ public class RenderWaterOrb extends RenderSnowball<EntityWaterOrb> {
 
     @Override
     public void doRender(EntityWaterOrb entity, double x, double y, double z, float entityYaw, float partialTicks) {
-        // Apply 2x scale: pass x/2,y/2,z/2 so that RenderSnowball's internal
-        // translate(x,y,z) lands at the correct position after the 2x scale.
-        GlStateManager.pushMatrix();
-        GlStateManager.scale(2.0f, 2.0f, 2.0f);
-        super.doRender(entity, x * 0.5, y * 0.5, z * 0.5, entityYaw, partialTicks);
-        GlStateManager.popMatrix();
+        // Invisible — the water ball is shown entirely via DRIP_WATER particles spawned server-side
     }
 
     public static class Factory implements IRenderFactory<EntityWaterOrb> {

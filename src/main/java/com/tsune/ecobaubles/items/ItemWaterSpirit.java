@@ -58,4 +58,9 @@ public class ItemWaterSpirit extends Item implements IBauble {
         tooltip.add(I18n.format("item.water_spirit.water_robe_boost"));
         tooltip.add(I18n.format("item.water_spirit.water_heart_boost"));
     }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§9" + super.getItemStackDisplayName(stack);
+    }
 }

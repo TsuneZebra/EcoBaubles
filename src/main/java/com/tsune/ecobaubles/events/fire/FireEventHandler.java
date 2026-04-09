@@ -19,8 +19,10 @@ import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.world.WorldServer;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
@@ -98,6 +100,9 @@ public class FireEventHandler {
     private static final Set<UUID> cloakBurnedEntities = new HashSet<>();
     private static final Map<UUID, Long> cloakKillExplosionCD = new HashMap<>();
 
+    // ── ExplosionPendant: per-player cooldown (3s) ────────────────────────────
+    private static final Map<UUID, Long> explosionPendantCD = new HashMap<>();
+
     // ─────────────────────────────────────────────────────────────────────────
     //  hasFireSpirit helper
     // ─────────────────────────────────────────────────────────────────────────
@@ -160,9 +165,8 @@ public class FireEventHandler {
                     Map<UUID, Long> perTarget = coreIgniteCooldowns.computeIfAbsent(pid, k -> new HashMap<>());
                     Long last = perTarget.get(tid);
                     if (last == null || now - last >= igniteCooldown) {
-                        target.setFire(fs ? 8 : 5);
+                        target.setFire(6); // 单纯点燃 6s
                         perTarget.put(tid, now);
-                        flameCoreTargets.put(tid, new FlameCoreData(now, fs));
                     }
                 }
 
@@ -171,7 +175,12 @@ public class FireEventHandler {
                     float dmg = event.getAmount();
                     float threshold = fs ? 0.40f : 0.55f;  // 火灵: 40%
                     float explodeDmg = fs ? 12.0f : 7.0f;  // 火灵: 12点
-                    if (dmg > target.getMaxHealth() * threshold) {
+                    long nowPendant = player.world.getTotalWorldTime();
+                    UUID pidPendant = player.getUniqueID();
+                    Long lastPendant = explosionPendantCD.get(pidPendant);
+                    boolean pendantReady = lastPendant == null || nowPendant - lastPendant >= 60L; // 3s CD
+                    if (dmg > target.getMaxHealth() * threshold && pendantReady) {
+                        explosionPendantCD.put(pidPendant, nowPendant);
                         double x = target.posX, y = target.posY, z = target.posZ;
                         List<EntityLivingBase> nearby = player.world.getEntitiesWithinAABB(
                             EntityLivingBase.class,
@@ -185,6 +194,11 @@ public class FireEventHandler {
                         player.world.playSound(null, x, y, z,
                             SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS,
                             2.0f, 1.1f + player.world.rand.nextFloat() * 0.2f);
+                        if (player.world instanceof WorldServer) {
+                            WorldServer ws = (WorldServer) player.world;
+                            ws.spawnParticle(EnumParticleTypes.EXPLOSION_HUGE, x, y + 0.5, z, 2, 0.5, 0.5, 0.5, 0.0);
+                            ws.spawnParticle(EnumParticleTypes.EXPLOSION_LARGE, x, y, z, 6, 1.5, 1.0, 1.5, 0.0);
+                        }
                     }
                 }
             }
@@ -221,6 +235,11 @@ public class FireEventHandler {
                             nbt.setLong(ItemAmuletFlameDemonEye.TAG_UNYIELD_END_TICK, now + unyieldDur);
                             nbt.setLong(ItemAmuletFlameDemonEye.TAG_COOLDOWN_TICK, now);
                             s.setTagCompound(nbt);
+                            if (!hurtPlayer.world.isRemote) {
+                                hurtPlayer.world.playSound(null,
+                                    hurtPlayer.posX, hurtPlayer.posY, hurtPlayer.posZ,
+                                    SoundEvents.ITEM_TOTEM_USE, SoundCategory.PLAYERS, 1.0f, 1.0f);
+                            }
                         }
                     }
                 }
@@ -300,6 +319,11 @@ public class FireEventHandler {
                         killer.world.playSound(null, x, y, z,
                             SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS,
                             2.0f, 1.0f + killer.world.rand.nextFloat() * 0.2f);
+                        if (killer.world instanceof WorldServer) {
+                            WorldServer ws = (WorldServer) killer.world;
+                            ws.spawnParticle(EnumParticleTypes.EXPLOSION_HUGE, x, y + 0.5, z, 2, 0.6, 0.6, 0.6, 0.0);
+                            ws.spawnParticle(EnumParticleTypes.EXPLOSION_LARGE, x, y, z, 8, 2.0, 1.5, 2.0, 0.0);
+                        }
                         cloakKillExplosionCD.put(killer.getUniqueID(), now);
                     }
                     break;
@@ -402,6 +426,9 @@ public class FireEventHandler {
                     nbt.setLong(ItemAmuletFlameDemonEye.TAG_UNYIELD_END_TICK, now + unyieldDur);
                     nbt.setLong(ItemAmuletFlameDemonEye.TAG_COOLDOWN_TICK, now);
                     flameEye.setTagCompound(nbt);
+                    player.world.playSound(null,
+                        player.posX, player.posY, player.posZ,
+                        SoundEvents.ITEM_TOTEM_USE, SoundCategory.PLAYERS, 1.0f, 1.0f);
                 }
             }
             if (now < nbt.getLong(ItemAmuletFlameDemonEye.TAG_UNYIELD_END_TICK)) {
@@ -448,11 +475,23 @@ public class FireEventHandler {
                     EntityLivingBase.class, player.getEntityBoundingBox().grow(4.0));
                 float aoe = player.getMaxHealth() * 1.80f;
                 for (EntityLivingBase t : targets) {
-                    if (t != player) t.attackEntityFrom(DamageSource.MAGIC, aoe);
+                    if (t != player) {
+                        t.attackEntityFrom(DamageSource.MAGIC, aoe);
+                        t.setFire(10); // 爆炎戒额外：10s燃烧
+                    }
                 }
                 player.world.playSound(null, player.posX, player.posY, player.posZ,
                     SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS,
                     4.0f, 0.9f + player.world.rand.nextFloat() * 0.2f);
+                if (player.world instanceof WorldServer) {
+                    WorldServer ws = (WorldServer) player.world;
+                    ws.spawnParticle(EnumParticleTypes.EXPLOSION_HUGE,
+                        player.posX, player.posY + 1.0, player.posZ,
+                        3, 0.8, 0.8, 0.8, 0.0);
+                    ws.spawnParticle(EnumParticleTypes.EXPLOSION_LARGE,
+                        player.posX, player.posY, player.posZ,
+                        8, 2.0, 1.5, 2.0, 0.0);
+                }
                 nbt.setLong(ItemRingExplosion.TAG_ARMED_TICK, 0);
                 expRing.setTagCompound(nbt);
             }
@@ -502,6 +541,40 @@ public class FireEventHandler {
                     soulChains.remove(player.getUniqueID());
                     soulChainedEntities.remove(chain.targetId);
                 } else {
+                    // FLAME particle beam between player and target, every 10 ticks
+                    if (chainTarget != null && now % 10 == 0 && player.world instanceof WorldServer) {
+                        WorldServer ws = (WorldServer) player.world;
+                        double sx = player.posX, sy = player.posY + player.getEyeHeight() * 0.8, sz = player.posZ;
+                        double ex = chainTarget.posX, ey = chainTarget.posY + chainTarget.height * 0.5, ez = chainTarget.posZ;
+                        double dx = ex - sx, dy = ey - sy, dz = ez - sz;
+                        double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                        if (dist > 0.01) {
+                            double nx = dx / dist, ny = dy / dist, nz = dz / dist;
+                            int steps = (int) (dist / 1.0); // one point per block
+                            for (int k = 0; k <= steps; k++) {
+                                double t2 = (double) k / Math.max(steps, 1);
+                                ws.spawnParticle(EnumParticleTypes.FLAME, true,
+                                    sx + dx * t2, sy + dy * t2, sz + dz * t2,
+                                    1, 0.02, 0.02, 0.02, 0.0);
+                            }
+                            // Burn entities along the beam (excluding player and chain target)
+                            AxisAlignedBB beamBox = new AxisAlignedBB(
+                                Math.min(sx, ex) - 1, Math.min(sy, ey) - 1, Math.min(sz, ez) - 1,
+                                Math.max(sx, ex) + 1, Math.max(sy, ey) + 1, Math.max(sz, ez) + 1);
+                            List<EntityLivingBase> beamHits = player.world.getEntitiesWithinAABB(EntityLivingBase.class, beamBox);
+                            for (EntityLivingBase be : beamHits) {
+                                if (be == player || be.getUniqueID().equals(chain.targetId)) continue;
+                                double bx = be.posX - sx, by2 = be.posY + be.height * 0.5 - sy, bz = be.posZ - sz;
+                                double proj = Math.max(0, Math.min(dist, bx * nx + by2 * ny + bz * nz));
+                                double cx = sx + nx * proj, cy = sy + ny * proj, cz = sz + nz * proj;
+                                double d2line = Math.sqrt(
+                                    (be.posX - cx) * (be.posX - cx) +
+                                    (be.posY + be.height * 0.5 - cy) * (be.posY + be.height * 0.5 - cy) +
+                                    (be.posZ - cz) * (be.posZ - cz));
+                                if (d2line < 1.5) be.setFire(2); // 2s burn
+                            }
+                        }
+                    }
                     if (now - chain.lastDrainTick >= 40) { // every 2s
                         float drainCap = fs ? 8.0f : 5.0f; // 火灵: 上限 8
                         float drain = Math.min(chainTarget.getHealth() * 0.03f, drainCap);
@@ -564,7 +637,7 @@ public class FireEventHandler {
                 player.addPotionEffect(new PotionEffect(MobEffects.NIGHT_VISION, 300, 0, false, false));
             }
             if (now % 4 == 0) {
-                EntityLivingBase lookTarget = getLookTarget(player, 8.0);
+                EntityLivingBase lookTarget = getLookTarget(player, 50.0);
                 UUID pid = player.getUniqueID();
                 if (lookTarget instanceof IMob) {
                     UUID currentTarget = stareTargetMap.get(pid);
@@ -611,10 +684,24 @@ public class FireEventHandler {
                 if (e != player) {
                     currentAura.add(e.getUniqueID());
                     cloakBurnedEntities.add(e.getUniqueID());
-                    if (now % 20 == 0) e.attackEntityFrom(DamageSource.ON_FIRE, 1.0f);
+                    e.setFire(3); // 持续点燃，在范围内每tick刷新
                 }
             }
             cloakBurnedEntities.removeIf(id -> !currentAura.contains(id));
+
+            // Fire particle ring at aura boundary, every 5 ticks
+            if (now % 5 == 0 && player.world instanceof WorldServer) {
+                WorldServer ws = (WorldServer) player.world;
+                int steps = 24; // one point every 15 degrees
+                for (int step = 0; step < steps; step++) {
+                    double rad = (Math.PI * 2.0 * step) / steps;
+                    double px = player.posX + auraRange * Math.cos(rad);
+                    double pz = player.posZ + auraRange * Math.sin(rad);
+                    ws.spawnParticle(EnumParticleTypes.FLAME,
+                        px, player.posY + 0.1, pz,
+                        1, 0.0, 0.05, 0.0, 0.02);
+                }
+            }
         } else {
             cloakBurnedEntities.clear();
         }

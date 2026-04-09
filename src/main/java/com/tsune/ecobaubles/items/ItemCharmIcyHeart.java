@@ -33,7 +33,7 @@ public class ItemCharmIcyHeart extends Item implements IBauble {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.RARE;
+        return EnumRarity.COMMON;
     }
 
     @Override
@@ -46,5 +46,10 @@ public class ItemCharmIcyHeart extends Item implements IBauble {
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
         super.addInformation(stack, worldIn, tooltip, flagIn);
         tooltip.add(I18n.format("item.icy_heart_pendant.desc"));
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§b" + super.getItemStackDisplayName(stack);
     }
 }

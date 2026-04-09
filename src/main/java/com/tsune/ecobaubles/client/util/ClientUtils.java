@@ -9,7 +9,7 @@ public class ClientUtils {
     public static void showCooldownFeedback(long remainingTicks) {
         if (Minecraft.getMinecraft().player != null) {
             double remainingSeconds = remainingTicks / 20.0;
-            String feedback = String.format("ººƒ‹¿‰»¥÷–: %.1f√Î", remainingSeconds);
+            String feedback = String.format("ÂÜ∑Âç¥‰∏≠: %.1fs", remainingSeconds);
             Minecraft.getMinecraft().player.sendStatusMessage(new TextComponentString(TextFormatting.RED + feedback), true);
         }
     }

@@ -36,4 +36,9 @@ public class ItemAmuletWind extends Item implements IBauble {
         super.addInformation(stack, worldIn, tooltip, flagIn);
         tooltip.add(I18n.format("item.wind_amulet.desc"));
     }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§3" + super.getItemStackDisplayName(stack);
+    }
 }

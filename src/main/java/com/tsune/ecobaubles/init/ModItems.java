@@ -42,6 +42,17 @@ import com.tsune.ecobaubles.items.ItemHelmetIceSoulCrown;
 import com.tsune.ecobaubles.items.ItemBodyIceArmor;
 import com.tsune.ecobaubles.items.ItemCharmIcyHeart;
 import com.tsune.ecobaubles.items.ItemIceSpirit;
+// Thunder items
+import com.tsune.ecobaubles.items.ItemAmuletThunderGod;
+import com.tsune.ecobaubles.items.ItemAmuletStatic;
+import com.tsune.ecobaubles.items.ItemRingThunderCrack;
+import com.tsune.ecobaubles.items.ItemRingLightningChain;
+import com.tsune.ecobaubles.items.ItemRingElectrify;
+import com.tsune.ecobaubles.items.ItemBeltThunderPulse;
+import com.tsune.ecobaubles.items.ItemHelmetThunderEye;
+import com.tsune.ecobaubles.items.ItemBodyThunderArmor;
+import com.tsune.ecobaubles.items.ItemCharmThunderBolt;
+import com.tsune.ecobaubles.items.ItemThunderSpirit;
 import net.minecraft.item.Item;
 
 import java.util.ArrayList;
@@ -97,4 +108,16 @@ public class ModItems {
     public static final Item ICE_ARMOR_BODY       = new ItemBodyIceArmor("ice_armor_body");
     public static final Item ICY_HEART_PENDANT    = new ItemCharmIcyHeart("icy_heart_pendant");
     public static final Item ICE_SPIRIT           = new ItemIceSpirit("ice_spirit");
+
+    // Thunder items
+    public static final Item THUNDER_GOD_AMULET   = new ItemAmuletThunderGod("thunder_god_amulet");
+    public static final Item STATIC_AMULET        = new ItemAmuletStatic("static_amulet");
+    public static final Item THUNDER_CRACK_RING   = new ItemRingThunderCrack("thunder_crack_ring");
+    public static final Item LIGHTNING_CHAIN_RING = new ItemRingLightningChain("lightning_chain_ring");
+    public static final Item ELECTRIFY_RING       = new ItemRingElectrify("electrify_ring");
+    public static final Item THUNDER_PULSE_BELT   = new ItemBeltThunderPulse("thunder_pulse_belt");
+    public static final Item THUNDER_EYE          = new ItemHelmetThunderEye("thunder_eye");
+    public static final Item THUNDER_ARMOR        = new ItemBodyThunderArmor("thunder_armor");
+    public static final Item THUNDER_BOLT_PENDANT = new ItemCharmThunderBolt("thunder_bolt_pendant");
+    public static final Item THUNDER_SPIRIT       = new ItemThunderSpirit("thunder_spirit");
 }

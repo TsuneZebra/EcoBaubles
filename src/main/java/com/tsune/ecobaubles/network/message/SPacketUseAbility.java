@@ -52,11 +52,9 @@ public class SPacketUseAbility implements IMessage {
                     ItemStack stack = baubles.getStackInSlot(i);
                     Item item = stack.getItem();
                     if (item instanceof IActiveAbility) {
-                        ((IActiveAbility) item).useAbility(player, stack);
-                        
-                        // Set the global cooldown
-                        cooldown.setGlobalCooldown(world.getTotalWorldTime() + 1200); // 60s cooldown
-                        return; // Found and used an ability, stop searching
+                        IActiveAbility ability = (IActiveAbility) item;
+                        ability.useAbility(player, stack);
+                        return;
                     }
                 }
             });

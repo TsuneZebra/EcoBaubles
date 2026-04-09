@@ -2,6 +2,7 @@ package com.tsune.ecobaubles.events;
 
 import baubles.api.BaublesApi;
 import baubles.api.cap.IBaublesItemHandler;
+import com.tsune.ecobaubles.EcoBaubles;
 import com.tsune.ecobaubles.init.ModItems;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.EntityLivingBase;
@@ -38,6 +39,7 @@ import net.minecraft.client.settings.KeyBinding;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 
 import net.minecraftforge.event.entity.ProjectileImpactEvent;
+import net.minecraftforge.event.entity.player.ArrowLooseEvent;
 import net.minecraft.util.math.MathHelper;
 
 import java.util.List;
@@ -60,15 +62,19 @@ public class ForgeEventHandler {
     
     // Wind Ring - Buff state (instant draw + 30% speed + piercing)
     private static final Map<UUID, Long> windRingBuffExpiry = new HashMap<>();
+    // Cached reflection handles — found by signature to avoid SRG name guessing
     // arrow UUID -> set of entity UUIDs already hit (for piercing)
     private static final Map<UUID, Set<UUID>> windPiercingArrows = new HashMap<>();
 
     public static void activateWindRingBuff(EntityPlayer player, long expiryTick) {
-        // 风灵增强: buff duration 5s→7s
+        // 风灵增强: buff duration 2s→3s
         long actualExpiry = hasWindSpirit(player)
-                ? player.world.getTotalWorldTime() + 7 * 20
+                ? player.world.getTotalWorldTime() + 3 * 20
                 : expiryTick;
         windRingBuffExpiry.put(player.getUniqueID(), actualExpiry);
+        // Feedback so player knows the buff actually fired
+        player.sendMessage(new net.minecraft.util.text.TextComponentString(
+                "\u00a7b[苍风] 疾风已激活"));
     }
 
     // Crack Wind Ring - Bow speed and arrow effects
@@ -558,7 +564,17 @@ public class ForgeEventHandler {
             applyCrackWindRingEffects(player);
         }
     }
-    
+
+
+    @SubscribeEvent(priority = net.minecraftforge.fml.common.eventhandler.EventPriority.LOWEST, receiveCanceled = true)
+    public void onArrowLoose(ArrowLooseEvent event) {
+        UUID pid = event.getEntityPlayer().getUniqueID();
+        Long buffExpiry = windRingBuffExpiry.get(pid);
+        if (buffExpiry != null && event.getWorld().getTotalWorldTime() <= buffExpiry) {
+            event.setCharge(20);
+        }
+    }
+
     /**
      * Handle arrow speed boost when arrow is spawned
      */
@@ -572,7 +588,8 @@ public class ForgeEventHandler {
         // ── 苍风戒: buff active → instant draw + 30% speed + piercing ──────────
         UUID pid = shooter.getUniqueID();
         Long buffExpiry = windRingBuffExpiry.get(pid);
-        if (buffExpiry != null && shooter.world.getTotalWorldTime() <= buffExpiry) {
+        long now2 = shooter.world.getTotalWorldTime();
+        if (buffExpiry != null && now2 <= buffExpiry) {
             // Normalize to full draw speed (3.0) then apply +30%
             double speed = Math.sqrt(arrow.motionX * arrow.motionX + arrow.motionY * arrow.motionY + arrow.motionZ * arrow.motionZ);
             if (speed > 1e-6) {
@@ -597,6 +614,7 @@ public class ForgeEventHandler {
     public void onProjectileImpact(ProjectileImpactEvent event) {
         if (!(event.getEntity() instanceof EntityArrow)) return;
         EntityArrow arrow = (EntityArrow) event.getEntity();
+        if (arrow.world.isRemote) return; // all pierce logic is server-only
         Set<UUID> hitEntities = windPiercingArrows.get(arrow.getUniqueID());
         if (hitEntities == null) return;
 
@@ -622,16 +640,14 @@ public class ForgeEventHandler {
         }
         hitEntities.add(tid);
 
-        // Deal damage manually, mirroring EntityArrow.onHit logic
-        double spd = Math.sqrt(arrow.motionX * arrow.motionX + arrow.motionY * arrow.motionY + arrow.motionZ * arrow.motionZ);
-        int dmg = MathHelper.ceil(spd * arrow.getDamage());
-        if (arrow.getIsCritical()) {
-            dmg += arrow.world.rand.nextInt(dmg / 2 + 2);
-        }
+        // Directly apply arrow damage without calling onImpact (which would stop the arrow)
+        double spd = MathHelper.sqrt(arrow.motionX * arrow.motionX
+                + arrow.motionY * arrow.motionY + arrow.motionZ * arrow.motionZ);
+        int dmg = MathHelper.ceil(spd * arrow.getDamage() + 0.5D);
         Entity shooterEntity = arrow.shootingEntity != null ? arrow.shootingEntity : arrow;
         target.attackEntityFrom(DamageSource.causeArrowDamage(arrow, shooterEntity), (float) dmg);
 
-        // Cancel so the arrow keeps flying (does not die)
+        // Cancel vanilla onImpact so the arrow keeps flying
         event.setCanceled(true);
     }
     

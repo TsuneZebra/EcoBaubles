@@ -33,12 +33,7 @@ public class ItemHelmetIceSoulCrown extends Item implements IBauble {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.EPIC;
-    }
-
-    @Override
-    public boolean hasEffect(ItemStack stack) {
-        return true;
+        return EnumRarity.COMMON;
     }
 
     @SideOnly(Side.CLIENT)
@@ -46,5 +41,10 @@ public class ItemHelmetIceSoulCrown extends Item implements IBauble {
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
         super.addInformation(stack, worldIn, tooltip, flagIn);
         tooltip.add(I18n.format("item.ice_soul_crown.desc"));
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§b" + super.getItemStackDisplayName(stack);
     }
 }

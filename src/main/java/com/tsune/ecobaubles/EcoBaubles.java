@@ -3,6 +3,7 @@ package com.tsune.ecobaubles;
 import com.tsune.ecobaubles.capability.IPlayerCooldown;
 import com.tsune.ecobaubles.capability.PlayerCooldown;
 import com.tsune.ecobaubles.capability.PlayerCooldownStorage;
+import com.tsune.ecobaubles.client.IceGodHudOverlay;
 import com.tsune.ecobaubles.client.Keybinds;
 import com.tsune.ecobaubles.client.renderer.RenderWindArrow;
 import com.tsune.ecobaubles.client.renderer.RenderWaterOrb;
@@ -25,6 +26,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.logging.log4j.Logger;
 import com.tsune.ecobaubles.events.fire.FireEventHandler;
 import com.tsune.ecobaubles.events.ice.IceEventHandler;
+import com.tsune.ecobaubles.events.thunder.ThunderEventHandler;
 
 @Mod(modid = EcoBaubles.MODID, name = EcoBaubles.NAME, version = EcoBaubles.VERSION, dependencies = "required-after:baubles@[1.5.2,)")
 public class EcoBaubles {
@@ -46,6 +48,7 @@ public class EcoBaubles {
         MinecraftForge.EVENT_BUS.register(new FireEventHandler());
         MinecraftForge.EVENT_BUS.register(new WaterEventHandler());
         MinecraftForge.EVENT_BUS.register(new IceEventHandler());
+        MinecraftForge.EVENT_BUS.register(new ThunderEventHandler());
         MinecraftForge.EVENT_BUS.register(new CapabilityHandler());
         CapabilityManager.INSTANCE.register(IPlayerCooldown.class, new PlayerCooldownStorage(), PlayerCooldown::new);
         
@@ -61,6 +64,7 @@ public class EcoBaubles {
     public void init(FMLInitializationEvent event) {
         Keybinds.register();
         MinecraftForge.EVENT_BUS.register(new Keybinds());
+        MinecraftForge.EVENT_BUS.register(new IceGodHudOverlay());
         
         // Register entity renderers
         RenderingRegistry.registerEntityRenderingHandler(EntityWindArrow.class, new RenderWindArrow.Factory());

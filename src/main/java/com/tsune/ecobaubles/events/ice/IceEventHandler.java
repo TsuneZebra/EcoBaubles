@@ -3,7 +3,10 @@ package com.tsune.ecobaubles.events.ice;
 import baubles.api.BaublesApi;
 import baubles.api.cap.IBaublesItemHandler;
 import com.tsune.ecobaubles.init.ModItems;
+import com.tsune.ecobaubles.network.PacketHandler;
+import com.tsune.ecobaubles.network.message.CPacketIceGodFreezeStart;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.EntityLiving;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.SharedMonsterAttributes;
@@ -17,8 +20,11 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.WorldServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
@@ -40,7 +46,7 @@ import java.util.*;
  *  霜怨指环  — store ratio 60%→80%, trigger threshold 40%→50%
  *  寒域腰带  — max cold 60→80, slowness amplifier per range block +1
  *  冰魄之冠  — speed 15%→20%, attack 60→40 ticks cd, damage 4→6
- *  冰殇披甲  — shatter threshold 35%→45%, damage ratio 40%→55%
+ *  冰殇披甲  — armor +15→+20, toughness +5→+8
  *  极寒之心  — trigger 10%→15%, freeze 60→80 ticks, regen 4→6 HP/s
  */
 public class IceEventHandler {
@@ -90,6 +96,8 @@ public class IceEventHandler {
 
     // ── 寒域腰带 ──────────────────────────────────────────────────────────────
     private static final Map<UUID, Float> coldMeterMap = new HashMap<>();
+    // 自行记录上一tick位置，prevPosX在LivingUpdateEvent前已被更新无法使用
+    private static final Map<UUID, double[]> frostBeltLastPos = new HashMap<>();
 
     // ── 冰魄之冠 ──────────────────────────────────────────────────────────────
     private static final Map<UUID, Long> iceCrownAttackCD = new HashMap<>();
@@ -261,6 +269,17 @@ public class IceEventHandler {
                                     (int) freezeTicks + 20, 127, false, false));
                         }
                         worldFrozenMobs.put(pid, frozenSet);
+                        // Sound + HUD progress bar
+                        if (!vp.world.isRemote) {
+                            vp.world.playSound(null, vp.posX, vp.posY, vp.posZ,
+                                    SoundEvents.ENTITY_ELDER_GUARDIAN_CURSE,
+                                    SoundCategory.PLAYERS, 1.0f, 0.7f);
+                            if (vp instanceof EntityPlayerMP) {
+                                PacketHandler.INSTANCE.sendTo(
+                                        new CPacketIceGodFreezeStart(now + freezeTicks, freezeTicks),
+                                        (EntityPlayerMP) vp);
+                            }
+                        }
                     }
                 }
             }
@@ -487,15 +506,37 @@ public class IceEventHandler {
         // ── 寒域腰带: cold meter update ───────────────────────────────────────
         if (hasFrostBelt) {
             float maxCold = is ? 80.0f : 60.0f;
-            float cold = coldMeterMap.getOrDefault(pid, 0.0f);
-            double speed = Math.sqrt(player.motionX * player.motionX + player.motionZ * player.motionZ);
+            float coldBefore = coldMeterMap.getOrDefault(pid, 0.0f);
+            float cold = coldBefore;
+            double[] lastPos = frostBeltLastPos.get(pid);
+            double dx = lastPos != null ? player.posX - lastPos[0] : 0.0;
+            double dz = lastPos != null ? player.posZ - lastPos[1] : 0.0;
+            frostBeltLastPos.put(pid, new double[]{player.posX, player.posZ});
+            double speed = Math.sqrt(dx * dx + dz * dz);
             if (speed < 0.05) {
-                cold += 0.25f; // 5/20 per tick
+                cold += 0.25f; // 5/20 per tick = +5/s
             } else {
                 cold -= (float) Math.min(speed * 10.0, 4.0) / 20.0f;
             }
             cold = Math.max(0.0f, Math.min(maxCold, cold));
             coldMeterMap.put(pid, cold);
+
+            // Snow-like particles within aura range every 4 ticks
+            if (now % 4 == 0 && player.world instanceof WorldServer) {
+                WorldServer ws = (WorldServer) player.world;
+                java.util.Random rand = player.world.rand;
+                for (int i = 0; i < 3; i++) {
+                    double angle = rand.nextDouble() * Math.PI * 2;
+                    double r = rand.nextDouble() * 4.0;
+                    double px = player.posX + r * Math.cos(angle);
+                    double pz = player.posZ + r * Math.sin(angle);
+                    double py = player.posY + 0.5 + rand.nextDouble() * 2.0;
+                    // DRIP_WATER: tiny falling droplets, naturally drifts downward
+                    ws.spawnParticle(EnumParticleTypes.DRIP_WATER,
+                            true, px, py, pz,
+                            1, 0.0, 0.0, 0.0, 0.0);
+                }
+            }
 
             // Every 20 ticks: apply effects
             if (now % 20 == 0) {
@@ -568,9 +609,31 @@ public class IceEventHandler {
                     float dmg = is ? 6.0f : 4.0f;
                     nearest.attackEntityFrom(DamageSource.MAGIC, dmg);
                     nearest.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, 60, 0, false, true));
-                    // Play snowball sound
-                    player.world.playSound(null, player.posX, player.posY, player.posZ,
+                    // Play snowball sound at head position
+                    player.world.playSound(null, player.posX, player.posY + player.getEyeHeight(), player.posZ,
                             SoundEvents.ENTITY_SNOWBALL_THROW, SoundCategory.PLAYERS, 0.5f, 1.0f);
+                    // Particle trail + impact burst
+                    if (player.world instanceof WorldServer) {
+                        WorldServer ws = (WorldServer) player.world;
+                        Vec3d start = new Vec3d(player.posX, player.posY + player.getEyeHeight(), player.posZ);
+                        Vec3d end   = new Vec3d(nearest.posX, nearest.posY + nearest.height * 0.5, nearest.posZ);
+                        Vec3d dir   = end.subtract(start).normalize();
+                        double dist = start.distanceTo(end);
+                        // Trail: small ice-magic sparks every 0.5 blocks
+                        for (double d = 0.5; d < dist; d += 0.5) {
+                            ws.spawnParticle(EnumParticleTypes.CRIT_MAGIC,
+                                    true,
+                                    start.x + dir.x * d,
+                                    start.y + dir.y * d,
+                                    start.z + dir.z * d,
+                                    1, 0.03, 0.03, 0.03, 0.02);
+                        }
+                        // Impact burst at target
+                        ws.spawnParticle(EnumParticleTypes.CRIT_MAGIC,
+                                true,
+                                nearest.posX, nearest.posY + nearest.height * 0.5, nearest.posZ,
+                                8, 0.2, 0.2, 0.2, 0.1);
+                    }
                 }
             }
         } else {
@@ -584,44 +647,40 @@ public class IceEventHandler {
             float hp = player.getHealth();
             float maxHp = player.getMaxHealth();
             boolean currentlyHasArmor = hasIceArmor.contains(pid);
-            boolean is2 = is;
 
-            float shatterThreshold = is2 ? 0.45f : 0.35f;
-            float shatterDmgRatio = is2 ? 0.55f : 0.40f;
+            float shatterThreshold = 0.35f;
+            float shatterDmgRatio  = 0.40f;
 
             if (!currentlyHasArmor) {
                 // Check if HP restored above 60%
                 if (hp >= maxHp * 0.60f) {
                     hasIceArmor.add(pid);
-                    // Apply armor modifiers
-                    applyArmorModifiers(player, true);
+                    applyArmorModifiers(player, is, true);
                 }
             } else {
-                // Ice armor is active
-                applyArmorModifiers(player, true);
+                // Ice armor is active — re-apply each tick so spirit toggle takes effect
+                applyArmorModifiers(player, is, true);
 
                 // Check for shatter
                 if (hp < maxHp * shatterThreshold) {
                     // SHATTER!
                     hasIceArmor.remove(pid);
-                    applyArmorModifiers(player, false);
+                    applyArmorModifiers(player, is, false);
                     float missingHp = maxHp - hp;
                     float shatterDmg = missingHp * shatterDmgRatio;
-                    // Damage all nearby entities (and player itself)
                     List<EntityLivingBase> nearby4 = player.world.getEntitiesWithinAABB(
                             EntityLivingBase.class, player.getEntityBoundingBox().grow(4.0));
                     for (EntityLivingBase e : nearby4) {
                         if (e == player) continue;
                         e.attackEntityFrom(DamageSource.MAGIC, shatterDmg);
                     }
-                    // Also damage self
                     player.attackEntityFrom(DamageSource.MAGIC, shatterDmg);
                 }
             }
         } else {
             if (hasIceArmor.contains(pid)) {
                 hasIceArmor.remove(pid);
-                applyArmorModifiers(player, false);
+                applyArmorModifiers(player, is, false);
             }
         }
 
@@ -629,29 +688,25 @@ public class IceEventHandler {
         iceArmorDebuffMap.entrySet().removeIf(e -> now >= e.getValue());
     }
 
-    private void applyArmorModifiers(EntityPlayer player, boolean apply) {
-        // +15 armor (operation 0 = flat add)
+    private void applyArmorModifiers(EntityPlayer player, boolean iceSpirit, boolean apply) {
+        // base: +15 armor / +5 toughness; ice spirit: +20 armor / +8 toughness
+        double armorBonus     = iceSpirit ? 20.0 : 15.0;
+        double toughnessBonus = iceSpirit ? 8.0  : 5.0;
+
         IAttributeInstance armorInst = player.getEntityAttribute(SharedMonsterAttributes.ARMOR);
         if (armorInst != null) {
             AttributeModifier existing = armorInst.getModifier(ICE_ARMOR_UUID);
+            if (existing != null) armorInst.removeModifier(ICE_ARMOR_UUID);
             if (apply) {
-                if (existing == null) {
-                    armorInst.applyModifier(new AttributeModifier(ICE_ARMOR_UUID, "iceArmorBonus", 15.0, 0));
-                }
-            } else {
-                if (existing != null) armorInst.removeModifier(ICE_ARMOR_UUID);
+                armorInst.applyModifier(new AttributeModifier(ICE_ARMOR_UUID, "iceArmorBonus", armorBonus, 0));
             }
         }
-        // +5 armor toughness (operation 0 = flat add)
         IAttributeInstance toughnessInst = player.getEntityAttribute(SharedMonsterAttributes.ARMOR_TOUGHNESS);
         if (toughnessInst != null) {
             AttributeModifier existing = toughnessInst.getModifier(ICE_TOUGHNESS_UUID);
+            if (existing != null) toughnessInst.removeModifier(ICE_TOUGHNESS_UUID);
             if (apply) {
-                if (existing == null) {
-                    toughnessInst.applyModifier(new AttributeModifier(ICE_TOUGHNESS_UUID, "iceToughnessBonus", 5.0, 0));
-                }
-            } else {
-                if (existing != null) toughnessInst.removeModifier(ICE_TOUGHNESS_UUID);
+                toughnessInst.applyModifier(new AttributeModifier(ICE_TOUGHNESS_UUID, "iceToughnessBonus", toughnessBonus, 0));
             }
         }
     }
@@ -721,5 +776,16 @@ public class IceEventHandler {
                 breakIcePrison(entity);
             }
         }
+    }
+
+    // ── Public getters for tooltip display (single-player JVM sharing) ───────
+    public static float getColdMeter(UUID pid) {
+        return coldMeterMap.getOrDefault(pid, 0.0f);
+    }
+
+    /** Returns the world tick when the ice-god freeze was last triggered, or -1 if never. */
+    public static long getIceGodLastTrigger(UUID pid) {
+        Long val = iceGodCD.get(pid);
+        return val == null ? -1L : val;
     }
 }

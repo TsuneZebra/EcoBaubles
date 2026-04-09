@@ -2,6 +2,7 @@ package com.tsune.ecobaubles.network;
 
 import com.tsune.ecobaubles.EcoBaubles;
 import com.tsune.ecobaubles.network.message.CPacketCooldownFeedback;
+import com.tsune.ecobaubles.network.message.CPacketIceGodFreezeStart;
 import com.tsune.ecobaubles.network.message.SPacketUseAbility;
 import com.tsune.ecobaubles.network.message.SPacketWindCharmJump;
 import com.tsune.ecobaubles.network.message.SPacketTogglePassive;
@@ -19,5 +20,6 @@ public class PacketHandler {
         INSTANCE.registerMessage(CPacketCooldownFeedback.Handler.class, CPacketCooldownFeedback.class, id++, Side.CLIENT);
         INSTANCE.registerMessage(SPacketWindCharmJump.Handler.class, SPacketWindCharmJump.class, id++, Side.SERVER);
         INSTANCE.registerMessage(SPacketTogglePassive.Handler.class, SPacketTogglePassive.class, id++, Side.SERVER);
+        INSTANCE.registerMessage(CPacketIceGodFreezeStart.Handler.class, CPacketIceGodFreezeStart.class, id++, Side.CLIENT);
     }
 }

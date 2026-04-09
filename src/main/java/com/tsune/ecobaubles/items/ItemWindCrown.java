@@ -33,7 +33,7 @@ public class ItemWindCrown extends Item implements IBauble {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.EPIC;
+        return EnumRarity.COMMON;
     }
 
     @Override
@@ -50,5 +50,10 @@ public class ItemWindCrown extends Item implements IBauble {
         tooltip.add(I18n.format("item.wind_crown.shield_info"));
         tooltip.add(I18n.format("item.wind_crown.projectile_info"));
         tooltip.add(I18n.format("item.wind_crown.regen_info"));
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§3" + super.getItemStackDisplayName(stack);
     }
 }

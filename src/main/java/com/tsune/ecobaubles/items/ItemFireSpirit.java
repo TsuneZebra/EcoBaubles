@@ -58,4 +58,9 @@ public class ItemFireSpirit extends Item implements IBauble {
         tooltip.add(I18n.format("item.fire_spirit.fervent_cloak_boost"));
         tooltip.add(I18n.format("item.fire_spirit.explosion_pendant_boost"));
     }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§4" + super.getItemStackDisplayName(stack);
+    }
 }

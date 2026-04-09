@@ -2,6 +2,8 @@ package com.tsune.ecobaubles.items;
 
 import baubles.api.BaubleType;
 import baubles.api.IBauble;
+import com.tsune.ecobaubles.capability.IPlayerCooldown;
+import com.tsune.ecobaubles.capability.PlayerCooldownProvider;
 import com.tsune.ecobaubles.entity.EntityWaterOrb;
 import com.tsune.ecobaubles.events.water.WaterEventHandler;
 import com.tsune.ecobaubles.init.ModCreativeTab;
@@ -42,12 +44,7 @@ public class ItemRingTorrent extends Item implements IBauble, IActiveAbility {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.RARE;
-    }
-
-    @Override
-    public boolean hasEffect(ItemStack stack) {
-        return true;
+        return EnumRarity.COMMON;
     }
 
     @Override
@@ -62,6 +59,8 @@ public class ItemRingTorrent extends Item implements IBauble, IActiveAbility {
 
         nbt.setLong(TAG_COOLDOWN_TICK, now);
         stack.setTagCompound(nbt);
+        IPlayerCooldown cap = player.getCapability(PlayerCooldownProvider.COOLDOWN_CAP, null);
+        if (cap != null) cap.setGlobalCooldown(now + cd);
 
         World world = player.world;
         EntityWaterOrb orb = new EntityWaterOrb(world, player);
@@ -88,5 +87,10 @@ public class ItemRingTorrent extends Item implements IBauble, IActiveAbility {
                 tooltip.add(I18n.format("item.torrent_ring.ready"));
             }
         }
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§9" + super.getItemStackDisplayName(stack);
     }
 }

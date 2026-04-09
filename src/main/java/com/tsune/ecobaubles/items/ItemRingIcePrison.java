@@ -2,6 +2,8 @@ package com.tsune.ecobaubles.items;
 
 import baubles.api.BaubleType;
 import baubles.api.IBauble;
+import com.tsune.ecobaubles.capability.IPlayerCooldown;
+import com.tsune.ecobaubles.capability.PlayerCooldownProvider;
 import com.tsune.ecobaubles.events.ice.IceEventHandler;
 import com.tsune.ecobaubles.init.ModCreativeTab;
 import com.tsune.ecobaubles.init.ModItems;
@@ -40,12 +42,7 @@ public class ItemRingIcePrison extends Item implements IBauble, IActiveAbility {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.EPIC;
-    }
-
-    @Override
-    public boolean hasEffect(ItemStack stack) {
-        return true;
+        return EnumRarity.COMMON;
     }
 
     @Override
@@ -59,6 +56,8 @@ public class ItemRingIcePrison extends Item implements IBauble, IActiveAbility {
         if (now - lastUsed < cd) return;
         nbt.setLong(TAG_COOLDOWN_TICK, now);
         stack.setTagCompound(nbt);
+        IPlayerCooldown cap = player.getCapability(PlayerCooldownProvider.COOLDOWN_CAP, null);
+        if (cap != null) cap.setGlobalCooldown(now + cd);
         IceEventHandler.activateIcePrison(player, is);
     }
 
@@ -78,5 +77,10 @@ public class ItemRingIcePrison extends Item implements IBauble, IActiveAbility {
                 tooltip.add(I18n.format("item.ice_prison_ring.ready"));
             }
         }
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§b" + super.getItemStackDisplayName(stack);
     }
 }

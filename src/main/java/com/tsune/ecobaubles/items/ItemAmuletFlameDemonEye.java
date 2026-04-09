@@ -48,12 +48,7 @@ public class ItemAmuletFlameDemonEye extends Item implements IBauble, IActiveAbi
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.EPIC;
-    }
-
-    @Override
-    public boolean hasEffect(ItemStack stack) {
-        return true;
+        return EnumRarity.COMMON;
     }
 
     @SideOnly(Side.CLIENT)
@@ -90,6 +85,9 @@ public class ItemAmuletFlameDemonEye extends Item implements IBauble, IActiveAbi
         nbt.setBoolean(TAG_TOGGLE, !toggled);
         stack.setTagCompound(nbt);
     }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§4" + super.getItemStackDisplayName(stack);
+    }
 }
-
-

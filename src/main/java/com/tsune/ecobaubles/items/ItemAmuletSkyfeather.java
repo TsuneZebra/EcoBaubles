@@ -38,12 +38,7 @@ public class ItemAmuletSkyfeather extends Item implements IBauble {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.EPIC;
-    }
-
-    @Override
-    public boolean hasEffect(ItemStack stack) {
-        return true;
+        return EnumRarity.COMMON;
     }
 
     @SideOnly(Side.CLIENT)
@@ -66,5 +61,10 @@ public class ItemAmuletSkyfeather extends Item implements IBauble {
         } else {
             tooltip.add(I18n.format("item.skyfeather_amulet.ready"));
         }
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§3" + super.getItemStackDisplayName(stack);
     }
 }

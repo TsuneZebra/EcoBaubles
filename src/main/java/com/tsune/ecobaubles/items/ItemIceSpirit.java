@@ -58,4 +58,9 @@ public class ItemIceSpirit extends Item implements IBauble {
         tooltip.add(I18n.format("item.ice_spirit.ice_armor_boost"));
         tooltip.add(I18n.format("item.ice_spirit.icy_heart_boost"));
     }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§b" + super.getItemStackDisplayName(stack);
+    }
 }

@@ -7,8 +7,10 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityThrowable;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumParticleTypes;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 
 public class EntityWaterOrb extends EntityThrowable {
 
@@ -25,6 +27,17 @@ public class EntityWaterOrb extends EntityThrowable {
     @Override
     protected float getGravityVelocity() {
         return 0.02f;
+    }
+
+    @Override
+    public void onUpdate() {
+        super.onUpdate();
+        // Emit DRIP_WATER particle cluster every tick (server → all clients)
+        if (!this.world.isRemote && this.world instanceof WorldServer) {
+            WorldServer ws = (WorldServer) this.world;
+            ws.spawnParticle(EnumParticleTypes.DRIP_WATER, true,
+                this.posX, this.posY, this.posZ, 6, 0.18, 0.18, 0.18, 0.0);
+        }
     }
 
     @Override

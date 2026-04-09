@@ -58,4 +58,9 @@ public class ItemWindSpirit extends Item implements IBauble {
         tooltip.add(I18n.format("item.wind_spirit.wind_shield_echo_boost"));
         tooltip.add(I18n.format("item.wind_spirit.wind_charm_boost"));
     }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§3" + super.getItemStackDisplayName(stack);
+    }
 }

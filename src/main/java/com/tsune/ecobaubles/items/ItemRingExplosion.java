@@ -4,6 +4,8 @@ import baubles.api.BaubleType;
 import baubles.api.IBauble;
 import baubles.api.BaublesApi;
 import baubles.api.cap.IBaublesItemHandler;
+import com.tsune.ecobaubles.capability.IPlayerCooldown;
+import com.tsune.ecobaubles.capability.PlayerCooldownProvider;
 import com.tsune.ecobaubles.events.fire.FireEventHandler;
 import com.tsune.ecobaubles.init.ModCreativeTab;
 import com.tsune.ecobaubles.init.ModItems;
@@ -44,12 +46,7 @@ public class ItemRingExplosion extends Item implements IBauble, IActiveAbility {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.EPIC;
-    }
-
-    @Override
-    public boolean hasEffect(ItemStack stack) {
-        return true;
+        return EnumRarity.COMMON;
     }
 
     @Override
@@ -66,6 +63,8 @@ public class ItemRingExplosion extends Item implements IBauble, IActiveAbility {
         nbt.setLong(TAG_ARMED_TICK, now);
         nbt.setLong(TAG_COOLDOWN_TICK, now);
         stack.setTagCompound(nbt);
+        IPlayerCooldown cap = player.getCapability(PlayerCooldownProvider.COOLDOWN_CAP, null);
+        if (cap != null) cap.setGlobalCooldown(now + cd);
         player.setFire(4); // visual fuse fire
     }
 
@@ -95,5 +94,10 @@ public class ItemRingExplosion extends Item implements IBauble, IActiveAbility {
                 tooltip.add(I18n.format("item.explosion_ring.ready"));
             }
         }
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§4" + super.getItemStackDisplayName(stack);
     }
 }

@@ -33,12 +33,7 @@ public class ItemRingAsh extends Item implements IBauble {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.RARE;
-    }
-
-    @Override
-    public boolean hasEffect(ItemStack stack) {
-        return true;
+        return EnumRarity.COMMON;
     }
 
     @SideOnly(Side.CLIENT)
@@ -46,5 +41,10 @@ public class ItemRingAsh extends Item implements IBauble {
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
         super.addInformation(stack, worldIn, tooltip, flagIn);
         tooltip.add(I18n.format("item.ash_ring.desc"));
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§4" + super.getItemStackDisplayName(stack);
     }
 }

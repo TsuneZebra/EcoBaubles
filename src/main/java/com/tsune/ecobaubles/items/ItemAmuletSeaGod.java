@@ -47,4 +47,9 @@ public class ItemAmuletSeaGod extends Item implements IBauble {
         super.addInformation(stack, worldIn, tooltip, flagIn);
         tooltip.add(I18n.format("item.sea_god_amulet.desc"));
     }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§9" + super.getItemStackDisplayName(stack);
+    }
 }

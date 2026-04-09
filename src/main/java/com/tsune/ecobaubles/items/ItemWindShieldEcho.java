@@ -33,7 +33,7 @@ public class ItemWindShieldEcho extends Item implements IBauble {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.EPIC;
+        return EnumRarity.COMMON;
     }
 
     @Override
@@ -51,5 +51,10 @@ public class ItemWindShieldEcho extends Item implements IBauble {
         tooltip.add(I18n.format("item.wind_shield_echo.immunity"));
         tooltip.add(I18n.format("item.wind_shield_echo.reflection"));
         tooltip.add(I18n.format("item.wind_shield_echo.area_damage"));
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§3" + super.getItemStackDisplayName(stack);
     }
 }

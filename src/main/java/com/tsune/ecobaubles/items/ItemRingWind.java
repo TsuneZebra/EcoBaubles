@@ -2,6 +2,8 @@ package com.tsune.ecobaubles.items;
 
 import baubles.api.BaubleType;
 import baubles.api.IBauble;
+import com.tsune.ecobaubles.capability.IPlayerCooldown;
+import com.tsune.ecobaubles.capability.PlayerCooldownProvider;
 import com.tsune.ecobaubles.events.ForgeEventHandler;
 import com.tsune.ecobaubles.init.ModCreativeTab;
 import com.tsune.ecobaubles.init.ModItems;
@@ -24,7 +26,7 @@ public class ItemRingWind extends Item implements IBauble, IActiveAbility {
 
     private static final String TAG_COOLDOWN = "wind_ring_cd";
     public static final int COOLDOWN_TICKS = 40 * 20; // 40s
-    public static final int BUFF_TICKS = 5 * 20;       // 5s
+    public static final int BUFF_TICKS = 2 * 20;       // 2s
 
     public ItemRingWind(String name) {
         setUnlocalizedName(name);
@@ -41,7 +43,7 @@ public class ItemRingWind extends Item implements IBauble, IActiveAbility {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.RARE;
+        return EnumRarity.COMMON;
     }
 
     @Override
@@ -53,6 +55,8 @@ public class ItemRingWind extends Item implements IBauble, IActiveAbility {
         if (now - lastUsed < COOLDOWN_TICKS) return;
         nbt.setLong(TAG_COOLDOWN, now);
         stack.setTagCompound(nbt);
+        IPlayerCooldown cap = player.getCapability(PlayerCooldownProvider.COOLDOWN_CAP, null);
+        if (cap != null) cap.setGlobalCooldown(now + COOLDOWN_TICKS);
         ForgeEventHandler.activateWindRingBuff(player, now + BUFF_TICKS);
     }
 
@@ -75,5 +79,10 @@ public class ItemRingWind extends Item implements IBauble, IActiveAbility {
                 tooltip.add(I18n.format("item.wind_ring.ready"));
             }
         }
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§3" + super.getItemStackDisplayName(stack);
     }
 }

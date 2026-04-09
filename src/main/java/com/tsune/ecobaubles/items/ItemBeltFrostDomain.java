@@ -2,8 +2,10 @@ package com.tsune.ecobaubles.items;
 
 import baubles.api.BaubleType;
 import baubles.api.IBauble;
+import com.tsune.ecobaubles.events.ice.IceEventHandler;
 import com.tsune.ecobaubles.init.ModCreativeTab;
 import com.tsune.ecobaubles.init.ModItems;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.item.EnumRarity;
@@ -33,7 +35,7 @@ public class ItemBeltFrostDomain extends Item implements IBauble {
 
     @Override
     public EnumRarity getRarity(ItemStack stack) {
-        return EnumRarity.RARE;
+        return EnumRarity.COMMON;
     }
 
     @Override
@@ -46,5 +48,15 @@ public class ItemBeltFrostDomain extends Item implements IBauble {
     public void addInformation(ItemStack stack, @Nullable World worldIn, List<String> tooltip, ITooltipFlag flagIn) {
         super.addInformation(stack, worldIn, tooltip, flagIn);
         tooltip.add(I18n.format("item.frost_domain_belt.desc"));
+        net.minecraft.client.entity.EntityPlayerSP player = Minecraft.getMinecraft().player;
+        if (player != null) {
+            float cold = IceEventHandler.getColdMeter(player.getUniqueID());
+            tooltip.add("\u00a7b\u5bd2\u6c14: " + (int) cold + " \u5c42");
+        }
+    }
+
+    @Override
+    public String getItemStackDisplayName(ItemStack stack) {
+        return "§b" + super.getItemStackDisplayName(stack);
     }
 }
