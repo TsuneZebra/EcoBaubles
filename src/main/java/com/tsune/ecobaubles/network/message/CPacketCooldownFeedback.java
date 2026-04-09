@@ -33,7 +33,8 @@ public class CPacketCooldownFeedback implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(CPacketCooldownFeedback message, MessageContext ctx) {
-            ClientUtils.showCooldownFeedback(message.cooldownRemaining);
+            net.minecraft.client.Minecraft.getMinecraft().addScheduledTask(() ->
+                    ClientUtils.showCooldownFeedback(message.cooldownRemaining));
             return null;
         }
     }

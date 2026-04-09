@@ -325,6 +325,7 @@ public class WaterEventHandler {
         boolean hasTideSurge = hasBauble(player, ModItems.TIDE_SURGE_AMULET);
         boolean hasWaterRobe = hasBauble(player, ModItems.WATER_ROBE);
         boolean hasAbyss     = hasBauble(player, ModItems.ABYSS_HELMET);
+        boolean hasPendant   = hasBauble(player, ModItems.WATER_HEART_PENDANT);
         boolean ws           = hasWaterSpirit(player); // 水灵增强
 
         // ── SeaGod ────────────────────────────────────────────────────────────
@@ -421,6 +422,22 @@ public class WaterEventHandler {
                     "abyssHealth", 0.20, 2, false);
             applyOrRemoveModifier(player, SharedMonsterAttributes.ATTACK_DAMAGE, ABYSS_DAMAGE_UUID,
                     "abyssDepth", 0.0, 1, false);
+        }
+
+        // ── WaterHeartPendant: regen overflow → absorption (vanilla regen skips ────
+        //    heal() when at full HP, so we intercept here instead)
+        if (hasPendant && player.getHealth() >= player.getMaxHealth()) {
+            net.minecraft.potion.PotionEffect regenEffect = player.getActivePotionEffect(MobEffects.REGENERATION);
+            if (regenEffect != null) {
+                int interval = Math.max(1, 50 >> regenEffect.getAmplifier());
+                if (regenEffect.getDuration() % interval == 0) {
+                    float cap = player.getMaxHealth() * (ws ? 0.40f : 0.30f);
+                    float current = player.getAbsorptionAmount();
+                    if (current < cap) {
+                        player.setAbsorptionAmount(Math.min(current + 1.0f, cap));
+                    }
+                }
+            }
         }
 
         // ── WaterRobe: share regen when HP > 90% ─────────────────────────────
